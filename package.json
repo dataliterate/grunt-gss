@@ -1,0 +1,43 @@
+{
+  "name": "grunt-gss",
+  "description": "Exports Google Spreadsheets that you have access to.",
+  "version": "0.1.0",
+  "homepage": "https://github.com/h0ward/grunt-gss",
+  "author": {
+    "name": "h0ward",
+    "url": "http://github.com/h0ward"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/h0ward/grunt-gss.git"
+  },
+  "bugs": {
+    "url": "https://github.com/h0ward/grunt-gss/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/h0ward/grunt-gss/blob/master/LICENSE-MIT"
+    }
+  ],
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "dependencies": {
+    "googleapis": "~0.6.1",
+    "node-promise": "~0.5.10",
+    "open": "~0.0.4",
+    "querystring": "~0.2.0",
+    "request": "~2.33.0"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.0",
+    "grunt-contrib-coffee": "~0.8.0"
+  },
+  "keywords": [
+    "gruntplugin",
+    "google",
+    "spreadsheet",
+    "couchdb"
+  ]
+}
