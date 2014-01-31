@@ -22,11 +22,12 @@ module.exports = function(grunt) {
         options: {
           clientId: '785010223027.apps.googleusercontent.com',
           clientSecret: 'nwQ2UedRysgbNZl6jE3I77Ji',
+          saveJson: true,
           key: '0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE'
         },
         files: {
-          'Sheet1.csv': 0,
-          'Sheet2.csv': 1
+          'Sheet1.json': 0,
+          'Sheet2.json': 1
         }
       }
     }

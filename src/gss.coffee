@@ -9,6 +9,7 @@ module.exports = (grunt) ->
   request = require 'request'
   OAuth2Client = googleapis.OAuth2Client
   done = undefined
+  csv2json = require './lib/csv2json'
 
   getSheet = (fileId, sheetId, oauth2client) ->
     promise = new Promise()
@@ -79,7 +80,9 @@ module.exports = (grunt) ->
     # sync, could be implt as async after token is retrieved
     (next = (file) ->
       getSheet(opts.key, file.gid, oauth2client).then (resp) ->
-        grunt.file.write file.path, resp.body
+        if resp.body.length
+          unless opts.saveJson then grunt.file.write file.path, resp.body
+          else grunt.file.write file.path, csv2json resp.body
         if files.length then next files.shift()
         else done true
     ).call @, files.shift()
