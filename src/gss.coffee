@@ -73,8 +73,10 @@ module.exports = (grunt) ->
   intRx = /^\d+$/i
   floatRx = /^\d+\.\d+$/i
   censor = (key, val) ->
-    if intRx.test val then parseInt val
+    if typeof val is 'object' then val
+    else if intRx.test val then parseInt val
     else if floatRx.test val then parseFloat val
+    else if val.indexOf(',') isnt -1 then val.split ','
     else val
 
   grunt.registerMultiTask 'gss', ->

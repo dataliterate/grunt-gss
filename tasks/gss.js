@@ -107,10 +107,14 @@ module.exports = function(grunt) {
   intRx = /^\d+$/i;
   floatRx = /^\d+\.\d+$/i;
   censor = function(key, val) {
-    if (intRx.test(val)) {
+    if (typeof val === 'object') {
+      return val;
+    } else if (intRx.test(val)) {
       return parseInt(val);
     } else if (floatRx.test(val)) {
       return parseFloat(val);
+    } else if (val.indexOf(',') !== -1) {
+      return val.split(',');
     } else {
       return val;
     }
