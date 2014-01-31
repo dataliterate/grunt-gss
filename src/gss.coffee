@@ -1,14 +1,15 @@
 module.exports = (grunt) ->
 
+  all = require('node-promise').all
+  csv2json = require './lib/csv2json'
+  done = undefined
   googleapis = require 'googleapis'
   http = require 'http'
   open = require 'open'
   querystring = require 'querystring'
-  Promise = require('node-promise').Promise
-  all = require('node-promise').all
   request = require 'request'
   OAuth2Client = googleapis.OAuth2Client
-  done = undefined
+  Promise = require('node-promise').Promise
 
   getSheet = (fileId, sheetId, oauth2client) ->
     promise = new Promise()
@@ -69,17 +70,34 @@ module.exports = (grunt) ->
     .listen 4477 # ggss
     promise
 
+  intRx = /^\d+$/i
+  floatRx = /^\d+\.\d+$/i
+  censor = (key, val) ->
+    if typeof val is 'object' then val
+    else if intRx.test val then parseInt val
+    else if floatRx.test val then parseFloat val
+    else if val.indexOf(',') isnt -1 then val.split ','
+    else val
+
+  stKeyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/
   grunt.registerMultiTask 'gss', ->
     done = @async()
     opts = @data.options
     files = []
-    files.push {path, gid} for path, gid of @data.files
+    for path, link of @data.files
+      file = JSON.parse link.replace stKeyAndGidRx, '{"key":"$1","gid":"$2"}'
+      file.path = path
+      files.push file
     oauth2client = new OAuth2Client opts.clientId, opts.clientSecret, 'http://localhost:4477/'
 
     # sync, could be implt as async after token is retrieved
     (next = (file) ->
-      getSheet(opts.key, file.gid, oauth2client).then (resp) ->
-        grunt.file.write file.path, resp.body
+      getSheet(file.key, file.gid, oauth2client).then (resp) ->
+        if resp.body.length
+          unless opts.saveJson then grunt.file.write file.path, resp.body
+          else unless opts.prettifyJson then grunt.file.write file.path, csv2json resp.body
+          else unless opts.typeDetection then grunt.file.write file.path, JSON.stringify JSON.parse(csv2json resp.body), undefined, 2
+          else grunt.file.write file.path, JSON.stringify JSON.parse(csv2json resp.body), censor, 2
         if files.length then next files.shift()
         else done true
     ).call @, files.shift()

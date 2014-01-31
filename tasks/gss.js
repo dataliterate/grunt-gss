@@ -1,14 +1,15 @@
 module.exports = function(grunt) {
-  var OAuth2Client, Promise, all, done, getAccessToken, getClient, getFile, getSheet, googleapis, http, open, querystring, request, _files;
+  var OAuth2Client, Promise, all, censor, csv2json, done, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, open, querystring, request, stKeyAndGidRx, _files;
+  all = require('node-promise').all;
+  csv2json = require('./lib/csv2json');
+  done = void 0;
   googleapis = require('googleapis');
   http = require('http');
   open = require('open');
   querystring = require('querystring');
-  Promise = require('node-promise').Promise;
-  all = require('node-promise').all;
   request = require('request');
   OAuth2Client = googleapis.OAuth2Client;
-  done = void 0;
+  Promise = require('node-promise').Promise;
   getSheet = function(fileId, sheetId, oauth2client) {
     var promise;
     promise = new Promise();
@@ -103,23 +104,48 @@ module.exports = function(grunt) {
     }).listen(4477);
     return promise;
   };
+  intRx = /^\d+$/i;
+  floatRx = /^\d+\.\d+$/i;
+  censor = function(key, val) {
+    if (typeof val === 'object') {
+      return val;
+    } else if (intRx.test(val)) {
+      return parseInt(val);
+    } else if (floatRx.test(val)) {
+      return parseFloat(val);
+    } else if (val.indexOf(',') !== -1) {
+      return val.split(',');
+    } else {
+      return val;
+    }
+  };
+  stKeyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/;
   grunt.registerMultiTask('gss', function() {
-    var files, gid, next, oauth2client, opts, path, _ref;
+    var file, files, link, next, oauth2client, opts, path, _ref;
     done = this.async();
     opts = this.data.options;
     files = [];
     _ref = this.data.files;
     for (path in _ref) {
-      gid = _ref[path];
-      files.push({
-        path: path,
-        gid: gid
-      });
+      link = _ref[path];
+      file = JSON.parse(link.replace(stKeyAndGidRx, '{"key":"$1","gid":"$2"}'));
+      file.path = path;
+      files.push(file);
     }
     oauth2client = new OAuth2Client(opts.clientId, opts.clientSecret, 'http://localhost:4477/');
     return (next = function(file) {
-      return getSheet(opts.key, file.gid, oauth2client).then(function(resp) {
-        grunt.file.write(file.path, resp.body);
+      return getSheet(file.key, file.gid, oauth2client).then(function(resp) {
+        if (resp.body.length) {
+          if (!opts.saveJson) {
+            grunt.file.write(file.path, resp.body);
+          } else if (!opts.prettifyJson) {
+            grunt.file.write(file.path, csv2json(resp.body));
+          } else if (!opts.typeDetection) {
+            grunt.file.write(file.path, JSON.stringify(JSON.parse(csv2json(resp.body)), void 0, 2));
+          } else {
+            grunt.file.write(file.path, JSON.stringify(JSON.parse(csv2json(resp.body)), censor, 2));
+          }
+        }
         if (files.length) {
           return next(files.shift());
         } else {
