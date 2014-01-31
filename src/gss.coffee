@@ -79,16 +79,20 @@ module.exports = (grunt) ->
     else if val.indexOf(',') isnt -1 then val.split ','
     else val
 
+  stKeyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/
   grunt.registerMultiTask 'gss', ->
     done = @async()
     opts = @data.options
     files = []
-    files.push {path, gid} for path, gid of @data.files
+    for path, link of @data.files
+      file = JSON.parse link.replace stKeyAndGidRx, '{"key":"$1","gid":"$2"}'
+      file.path = path
+      files.push file
     oauth2client = new OAuth2Client opts.clientId, opts.clientSecret, 'http://localhost:4477/'
 
     # sync, could be implt as async after token is retrieved
     (next = (file) ->
-      getSheet(opts.key, file.gid, oauth2client).then (resp) ->
+      getSheet(file.key, file.gid, oauth2client).then (resp) ->
         if resp.body.length
           unless opts.saveJson then grunt.file.write file.path, resp.body
           else unless opts.prettifyJson then grunt.file.write file.path, csv2json resp.body

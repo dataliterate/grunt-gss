@@ -1,5 +1,5 @@
 module.exports = function(grunt) {
-  var OAuth2Client, Promise, all, censor, csv2json, done, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, open, querystring, request, _files;
+  var OAuth2Client, Promise, all, censor, csv2json, done, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, open, querystring, request, stKeyAndGidRx, _files;
   all = require('node-promise').all;
   csv2json = require('./lib/csv2json');
   done = void 0;
@@ -119,22 +119,22 @@ module.exports = function(grunt) {
       return val;
     }
   };
+  stKeyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/;
   grunt.registerMultiTask('gss', function() {
-    var files, gid, next, oauth2client, opts, path, _ref;
+    var file, files, link, next, oauth2client, opts, path, _ref;
     done = this.async();
     opts = this.data.options;
     files = [];
     _ref = this.data.files;
     for (path in _ref) {
-      gid = _ref[path];
-      files.push({
-        path: path,
-        gid: gid
-      });
+      link = _ref[path];
+      file = JSON.parse(link.replace(stKeyAndGidRx, '{"key":"$1","gid":"$2"}'));
+      file.path = path;
+      files.push(file);
     }
     oauth2client = new OAuth2Client(opts.clientId, opts.clientSecret, 'http://localhost:4477/');
     return (next = function(file) {
-      return getSheet(opts.key, file.gid, oauth2client).then(function(resp) {
+      return getSheet(file.key, file.gid, oauth2client).then(function(resp) {
         if (resp.body.length) {
           if (!opts.saveJson) {
             grunt.file.write(file.path, resp.body);
