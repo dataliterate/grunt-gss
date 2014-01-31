@@ -1,6 +1,6 @@
-# grunt-gss v0.1.0
+# grunt-gss v0.2.0
 
-> Exports Google Spreadsheets that you have access to.
+> Save your Google Spreadsheets locally as CSV or JSON.
 
 
 ## Getting Started
@@ -27,18 +27,32 @@ Trying to make it a task for CouchApps.
 ```javascript
 grunt.initConfig({
   gss: {
-    spreadsheet1: {
+    products: {
       options: {
-        // your Google API key
+        // from your Google API key
         clientId: '785010223027.apps.googleusercontent.com',
         clientSecret: 'nwQ2UedRysgbNZl6jE3I77Ji',
-        // the key in the link to your spreadsheet
-        key: '0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE'
+        // output format
+        saveJson: true,
+        // options for JSON
+        prettifyJson: true,
+        typeDetection: true // parseInt, parseFloat, or split(',')
       },
       files: {
-        // local path : gid of target worksheet
-        'Sheet1.csv': 0,
-        'Sheet2.csv': 1
+        // local save path : link to your worksheet
+        'Sheet1.json': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=0',
+        'Sheet2.json': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1'
+      }
+    },
+    // save as csv
+    products2: {
+      options: {
+        clientId: '785010223027.apps.googleusercontent.com',
+        clientSecret: 'nwQ2UedRysgbNZl6jE3I77Ji'
+      },
+      files: {
+        'Sheet1.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=0',
+        'Sheet2.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1'
       }
     }
   }
@@ -61,12 +75,8 @@ grunt.initConfig({
 3. Do it as usual under **File > Share**
 4. Without proper permission set, you will get a **File not found** error from Google
 
-### TODO
-1. Save also in JSON
-2. Data type detection
-3. Prettify
-
 
 ## Release History
 
+ * 2014-01-31   v0.2.0   implement save json, and update options
  * 2014-01-29   v0.1.0   initial release
