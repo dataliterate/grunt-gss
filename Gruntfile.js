@@ -24,6 +24,7 @@ module.exports = function(grunt) {
           clientSecret: 'nwQ2UedRysgbNZl6jE3I77Ji',
           saveJson: true,
           prettifyJson: true,
+          typeDetection: true,
           key: '0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE'
         },
         files: {

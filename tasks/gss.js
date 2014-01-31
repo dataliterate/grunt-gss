@@ -1,5 +1,5 @@
 module.exports = function(grunt) {
-  var OAuth2Client, Promise, all, csv2json, done, getAccessToken, getClient, getFile, getSheet, googleapis, http, open, querystring, request, _files;
+  var OAuth2Client, Promise, all, censor, csv2json, done, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, open, querystring, request, _files;
   all = require('node-promise').all;
   csv2json = require('./lib/csv2json');
   done = void 0;
@@ -104,6 +104,17 @@ module.exports = function(grunt) {
     }).listen(4477);
     return promise;
   };
+  intRx = /^\d+$/i;
+  floatRx = /^\d+\.\d+$/i;
+  censor = function(key, val) {
+    if (intRx.test(val)) {
+      return parseInt(val);
+    } else if (floatRx.test(val)) {
+      return parseFloat(val);
+    } else {
+      return val;
+    }
+  };
   grunt.registerMultiTask('gss', function() {
     var files, gid, next, oauth2client, opts, path, _ref;
     done = this.async();
@@ -125,8 +136,10 @@ module.exports = function(grunt) {
             grunt.file.write(file.path, resp.body);
           } else if (!opts.prettifyJson) {
             grunt.file.write(file.path, csv2json(resp.body));
-          } else {
+          } else if (!opts.typeDetection) {
             grunt.file.write(file.path, JSON.stringify(JSON.parse(csv2json(resp.body)), void 0, 2));
+          } else {
+            grunt.file.write(file.path, JSON.stringify(JSON.parse(csv2json(resp.body)), censor, 2));
           }
         }
         if (files.length) {

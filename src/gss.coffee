@@ -70,6 +70,13 @@ module.exports = (grunt) ->
     .listen 4477 # ggss
     promise
 
+  intRx = /^\d+$/i
+  floatRx = /^\d+\.\d+$/i
+  censor = (key, val) ->
+    if intRx.test val then parseInt val
+    else if floatRx.test val then parseFloat val
+    else val
+
   grunt.registerMultiTask 'gss', ->
     done = @async()
     opts = @data.options
@@ -83,7 +90,8 @@ module.exports = (grunt) ->
         if resp.body.length
           unless opts.saveJson then grunt.file.write file.path, resp.body
           else unless opts.prettifyJson then grunt.file.write file.path, csv2json resp.body
-          else grunt.file.write file.path, JSON.stringify JSON.parse(csv2json resp.body), undefined, 2
+          else unless opts.typeDetection then grunt.file.write file.path, JSON.stringify JSON.parse(csv2json resp.body), undefined, 2
+          else grunt.file.write file.path, JSON.stringify JSON.parse(csv2json resp.body), censor, 2
         if files.length then next files.shift()
         else done true
     ).call @, files.shift()
