@@ -22,11 +22,13 @@ module.exports = function(grunt) {
         options: {
           clientId: '785010223027.apps.googleusercontent.com',
           clientSecret: 'nwQ2UedRysgbNZl6jE3I77Ji',
-          key: '0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE'
+          saveJson: true,
+          prettifyJson: true,
+          typeDetection: true
         },
         files: {
-          'Sheet1.csv': 0,
-          'Sheet2.csv': 1
+          'Sheet1.json': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=0',
+          'Sheet2.json': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1'
         }
       }
     }

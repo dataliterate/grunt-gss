@@ -1,7 +1,7 @@
 {
   "name": "grunt-gss",
   "description": "Exports Google Spreadsheets that you have access to.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "homepage": "https://github.com/h0ward/grunt-gss",
   "author": {
     "name": "h0ward",
@@ -35,9 +35,15 @@
     "grunt-contrib-coffee": "~0.8.0"
   },
   "keywords": [
+    "grunt",
     "gruntplugin",
+    "export",
     "google",
     "spreadsheet",
-    "couchdb"
+    "oauth",
+    "couchdb",
+    "couchapp",
+    "json",
+    "csv"
   ]
 }
