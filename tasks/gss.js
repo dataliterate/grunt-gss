@@ -1,15 +1,15 @@
 module.exports = function(grunt) {
   var OAuth2Client, Promise, all, csv2json, done, getAccessToken, getClient, getFile, getSheet, googleapis, http, open, querystring, request, _files;
+  all = require('node-promise').all;
+  csv2json = require('./lib/csv2json');
+  done = void 0;
   googleapis = require('googleapis');
   http = require('http');
   open = require('open');
   querystring = require('querystring');
-  Promise = require('node-promise').Promise;
-  all = require('node-promise').all;
   request = require('request');
   OAuth2Client = googleapis.OAuth2Client;
-  done = void 0;
-  csv2json = require('./lib/csv2json');
+  Promise = require('node-promise').Promise;
   getSheet = function(fileId, sheetId, oauth2client) {
     var promise;
     promise = new Promise();
@@ -123,8 +123,10 @@ module.exports = function(grunt) {
         if (resp.body.length) {
           if (!opts.saveJson) {
             grunt.file.write(file.path, resp.body);
-          } else {
+          } else if (!opts.prettifyJson) {
             grunt.file.write(file.path, csv2json(resp.body));
+          } else {
+            grunt.file.write(file.path, JSON.stringify(JSON.parse(csv2json(resp.body)), void 0, 2));
           }
         }
         if (files.length) {

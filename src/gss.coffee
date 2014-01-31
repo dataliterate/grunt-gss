@@ -1,15 +1,15 @@
 module.exports = (grunt) ->
 
+  all = require('node-promise').all
+  csv2json = require './lib/csv2json'
+  done = undefined
   googleapis = require 'googleapis'
   http = require 'http'
   open = require 'open'
   querystring = require 'querystring'
-  Promise = require('node-promise').Promise
-  all = require('node-promise').all
   request = require 'request'
   OAuth2Client = googleapis.OAuth2Client
-  done = undefined
-  csv2json = require './lib/csv2json'
+  Promise = require('node-promise').Promise
 
   getSheet = (fileId, sheetId, oauth2client) ->
     promise = new Promise()
@@ -82,7 +82,8 @@ module.exports = (grunt) ->
       getSheet(opts.key, file.gid, oauth2client).then (resp) ->
         if resp.body.length
           unless opts.saveJson then grunt.file.write file.path, resp.body
-          else grunt.file.write file.path, csv2json resp.body
+          else unless opts.prettifyJson then grunt.file.write file.path, csv2json resp.body
+          else grunt.file.write file.path, JSON.stringify JSON.parse(csv2json resp.body), undefined, 2
         if files.length then next files.shift()
         else done true
     ).call @, files.shift()
