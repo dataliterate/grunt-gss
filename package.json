@@ -1,7 +1,7 @@
 {
   "name": "grunt-gss",
   "description": "Exports Google Spreadsheets that you have access to.",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "homepage": "https://github.com/h0ward/grunt-gss",
   "author": {
     "name": "h0ward",

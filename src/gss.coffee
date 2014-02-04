@@ -10,6 +10,7 @@ module.exports = (grunt) ->
   request = require 'request'
   OAuth2Client = googleapis.OAuth2Client
   Promise = require('node-promise').Promise
+  toType = (obj) -> ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase()
 
   getSheet = (fileId, sheetId, oauth2client) ->
     promise = new Promise()
@@ -105,6 +106,20 @@ module.exports = (grunt) ->
                         lv2.push el1.split ',' for el1 in lv1
                         el[key] = lv2
                       else el[key] = val.split ','
+              # enforce json field type
+              if opts.typeMapping
+                fields = []
+                types = []
+                for field, type of opts.typeMapping
+                  fields.push field
+                  types.push type
+                for el in arr
+                  for key, val of el
+                    if (pos = fields.indexOf key) isnt -1
+                      if toType(val) isnt type = types[pos]
+                        if type is 'array' then el[key] = [val]
+                        else if type is 'string' then el[key] = val.toString()
+                        else if type is 'number' then el[key] = parseFloat val
               # save pretty json array
               grunt.file.write file.path, JSON.stringify arr, null, 2
             # save raw json array
