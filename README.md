@@ -36,7 +36,13 @@ grunt.initConfig({
         saveJson: true,
         // options for JSON
         prettifyJson: true,
-        typeDetection: true // parseInt, parseFloat, or split(',')
+        // do parseInt, parseFloat, or split(',') automatically
+        typeDetection: true,
+        // can also be specified manually to 'number', 'string', or 'array'
+        typeMapping: {
+          col1: 'string',
+          col4: 'arra
+        }
       },
       files: {
         // local save path : link to your worksheet

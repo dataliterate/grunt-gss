@@ -24,7 +24,11 @@ module.exports = function(grunt) {
           clientSecret: 'nwQ2UedRysgbNZl6jE3I77Ji',
           saveJson: true,
           prettifyJson: true,
-          typeDetection: true
+          typeDetection: true,
+          typeMapping: {
+            col1: 'string',
+            col4: 'array'
+          }
         },
         files: {
           'Sheet1.json': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=0',

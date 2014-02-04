@@ -1,5 +1,5 @@
 module.exports = function(grunt) {
-  var OAuth2Client, Promise, all, csv2json, done, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, keyAndGidRx, open, querystring, request, _files;
+  var OAuth2Client, Promise, all, csv2json, done, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, keyAndGidRx, open, querystring, request, toType, _files;
   all = require('node-promise').all;
   csv2json = require('./lib/csv2json');
   done = void 0;
@@ -10,6 +10,9 @@ module.exports = function(grunt) {
   request = require('request');
   OAuth2Client = googleapis.OAuth2Client;
   Promise = require('node-promise').Promise;
+  toType = function(obj) {
+    return {}.toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
+  };
   getSheet = function(fileId, sheetId, oauth2client) {
     var promise;
     promise = new Promise();
@@ -122,7 +125,7 @@ module.exports = function(grunt) {
     oauth2client = new OAuth2Client(opts.clientId, opts.clientSecret, 'http://localhost:4477/');
     return (next = function(file) {
       return getSheet(file.key, file.gid, oauth2client).then(function(resp) {
-        var arr, arrStr, el, el1, key, lv1, lv2, val, _i, _j, _len, _len1;
+        var arr, arrStr, el, el1, field, fields, key, lv1, lv2, pos, type, types, val, _i, _j, _k, _len, _len1, _len2, _ref1;
         if (resp.body.length) {
           if (opts.saveJson) {
             arrStr = csv2json(resp.body);
@@ -148,6 +151,33 @@ module.exports = function(grunt) {
                         el[key] = lv2;
                       } else {
                         el[key] = val.split(',');
+                      }
+                    }
+                  }
+                }
+              }
+              if (opts.typeMapping) {
+                fields = [];
+                types = [];
+                _ref1 = opts.typeMapping;
+                for (field in _ref1) {
+                  type = _ref1[field];
+                  fields.push(field);
+                  types.push(type);
+                }
+                for (_k = 0, _len2 = arr.length; _k < _len2; _k++) {
+                  el = arr[_k];
+                  for (key in el) {
+                    val = el[key];
+                    if ((pos = fields.indexOf(key)) !== -1) {
+                      if (toType(val) !== (type = types[pos])) {
+                        if (type === 'array') {
+                          el[key] = [val];
+                        } else if (type === 'string') {
+                          el[key] = val.toString();
+                        } else if (type === 'number') {
+                          el[key] = parseFloat(val);
+                        }
                       }
                     }
                   }
