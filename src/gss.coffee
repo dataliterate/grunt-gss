@@ -117,7 +117,8 @@ module.exports = (grunt) ->
                   for key, val of el
                     if (pos = fields.indexOf key) isnt -1
                       if toType(val) isnt type = types[pos]
-                        if type is 'array' then el[key] = [val]
+                        if type is 'array'
+                          el[key] = if val then [val] else []
                         else if type is 'string' then el[key] = val.toString()
                         else if type is 'number' then el[key] = parseFloat val or 0
               # save pretty json array
