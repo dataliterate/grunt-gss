@@ -1,4 +1,4 @@
-# grunt-gss v0.2.2
+# grunt-gss v0.2.3
 
 > Save your Google Spreadsheets locally as CSV or JSON.
 
