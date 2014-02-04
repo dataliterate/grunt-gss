@@ -172,7 +172,7 @@ module.exports = function(grunt) {
                     if ((pos = fields.indexOf(key)) !== -1) {
                       if (toType(val) !== (type = types[pos])) {
                         if (type === 'array') {
-                          el[key] = [val];
+                          el[key] = val ? [val] : [];
                         } else if (type === 'string') {
                           el[key] = val.toString();
                         } else if (type === 'number') {
