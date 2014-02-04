@@ -97,7 +97,14 @@ module.exports = (grunt) ->
                   for key, val of el
                     if intRx.test val then el[key] = parseInt val
                     else if floatRx.test val then el[key] = parseFloat val
-                    else if val.indexOf(',') isnt -1 then el[key] = val.split ','
+                    else if val.indexOf(',') isnt -1
+                      # comma become second delimiter if pipe exists
+                      if val.indexOf('|') isnt -1
+                        lv1 = val.split '|'
+                        lv2 = []
+                        lv2.push el1.split ',' for el1 in lv1
+                        el[key] = lv2
+                      else el[key] = val.split ','
               # save pretty json array
               grunt.file.write file.path, JSON.stringify arr, null, 2
             # save raw json array
