@@ -122,7 +122,7 @@ module.exports = function(grunt) {
     oauth2client = new OAuth2Client(opts.clientId, opts.clientSecret, 'http://localhost:4477/');
     return (next = function(file) {
       return getSheet(file.key, file.gid, oauth2client).then(function(resp) {
-        var arr, arrStr, el, key, val, _i, _len;
+        var arr, arrStr, el, el1, key, lv1, lv2, val, _i, _j, _len, _len1;
         if (resp.body.length) {
           if (opts.saveJson) {
             arrStr = csv2json(resp.body);
@@ -133,13 +133,22 @@ module.exports = function(grunt) {
                   el = arr[_i];
                   for (key in el) {
                     val = el[key];
-                    grunt.log.error("" + key + ":" + (JSON.stringify(val)) + ":" + (val.indexOf(',')));
                     if (intRx.test(val)) {
                       el[key] = parseInt(val);
                     } else if (floatRx.test(val)) {
                       el[key] = parseFloat(val);
                     } else if (val.indexOf(',') !== -1) {
-                      el[key] = val.split(',');
+                      if (val.indexOf('|') !== -1) {
+                        lv1 = val.split('|');
+                        lv2 = [];
+                        for (_j = 0, _len1 = lv1.length; _j < _len1; _j++) {
+                          el1 = lv1[_j];
+                          lv2.push(el1.split(','));
+                        }
+                        el[key] = lv2;
+                      } else {
+                        el[key] = val.split(',');
+                      }
                     }
                   }
                 }
