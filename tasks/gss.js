@@ -1,5 +1,5 @@
 module.exports = function(grunt) {
-  var OAuth2Client, Promise, all, censor, csv2json, done, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, open, querystring, request, stKeyAndGidRx, _files;
+  var OAuth2Client, Promise, all, csv2json, done, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, keyAndGidRx, open, querystring, request, _files;
   all = require('node-promise').all;
   csv2json = require('./lib/csv2json');
   done = void 0;
@@ -106,20 +106,7 @@ module.exports = function(grunt) {
   };
   intRx = /^\d+$/i;
   floatRx = /^\d+\.\d+$/i;
-  censor = function(key, val) {
-    if (typeof val === 'object') {
-      return val;
-    } else if (intRx.test(val)) {
-      return parseInt(val);
-    } else if (floatRx.test(val)) {
-      return parseFloat(val);
-    } else if (val.indexOf(',') !== -1) {
-      return val.split(',');
-    } else {
-      return val;
-    }
-  };
-  stKeyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/;
+  keyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/;
   grunt.registerMultiTask('gss', function() {
     var file, files, link, next, oauth2client, opts, path, _ref;
     done = this.async();
@@ -128,22 +115,41 @@ module.exports = function(grunt) {
     _ref = this.data.files;
     for (path in _ref) {
       link = _ref[path];
-      file = JSON.parse(link.replace(stKeyAndGidRx, '{"key":"$1","gid":"$2"}'));
+      file = JSON.parse(link.replace(keyAndGidRx, '{"key":"$1","gid":"$2"}'));
       file.path = path;
       files.push(file);
     }
     oauth2client = new OAuth2Client(opts.clientId, opts.clientSecret, 'http://localhost:4477/');
     return (next = function(file) {
       return getSheet(file.key, file.gid, oauth2client).then(function(resp) {
+        var arr, arrStr, el, key, val, _i, _len;
         if (resp.body.length) {
-          if (!opts.saveJson) {
-            grunt.file.write(file.path, resp.body);
-          } else if (!opts.prettifyJson) {
-            grunt.file.write(file.path, csv2json(resp.body));
-          } else if (!opts.typeDetection) {
-            grunt.file.write(file.path, JSON.stringify(JSON.parse(csv2json(resp.body)), void 0, 2));
+          if (opts.saveJson) {
+            arrStr = csv2json(resp.body);
+            if (opts.prettifyJson) {
+              arr = JSON.parse(arrStr);
+              if (opts.typeDetection) {
+                for (_i = 0, _len = arr.length; _i < _len; _i++) {
+                  el = arr[_i];
+                  for (key in el) {
+                    val = el[key];
+                    grunt.log.error("" + key + ":" + (JSON.stringify(val)) + ":" + (val.indexOf(',')));
+                    if (intRx.test(val)) {
+                      el[key] = parseInt(val);
+                    } else if (floatRx.test(val)) {
+                      el[key] = parseFloat(val);
+                    } else if (val.indexOf(',') !== -1) {
+                      el[key] = val.split(',');
+                    }
+                  }
+                }
+              }
+              grunt.file.write(file.path, JSON.stringify(arr, null, 2));
+            } else {
+              grunt.file.write(file.path, arrStr);
+            }
           } else {
-            grunt.file.write(file.path, JSON.stringify(JSON.parse(csv2json(resp.body)), censor, 2));
+            grunt.file.write(file.path, resp.body);
           }
         }
         if (files.length) {
