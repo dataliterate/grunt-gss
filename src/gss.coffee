@@ -119,7 +119,7 @@ module.exports = (grunt) ->
                       if toType(val) isnt type = types[pos]
                         if type is 'array' then el[key] = [val]
                         else if type is 'string' then el[key] = val.toString()
-                        else if type is 'number' then el[key] = parseFloat val
+                        else if type is 'number' then el[key] = parseFloat val or 0
               # save pretty json array
               grunt.file.write file.path, JSON.stringify arr, null, 2
             # save raw json array
