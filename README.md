@@ -1,4 +1,4 @@
-# grunt-gss v0.2.3
+# grunt-gss v0.3.0
 
 > Save your Google Spreadsheets locally as CSV or JSON.
 
@@ -84,5 +84,6 @@ grunt.initConfig({
 
 ## Release History
 
+ * 2014-02-04   v0.3.0   typeMapping, new option to enforce field type
  * 2014-01-31   v0.2.0   implement save json, and update options
  * 2014-01-29   v0.1.0   initial release
