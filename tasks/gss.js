@@ -176,7 +176,7 @@ module.exports = function(grunt) {
                         } else if (type === 'string') {
                           el[key] = val.toString();
                         } else if (type === 'number') {
-                          el[key] = parseFloat(val);
+                          el[key] = parseFloat(val || 0);
                         }
                       }
                     }
