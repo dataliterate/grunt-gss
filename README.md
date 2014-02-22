@@ -1,4 +1,4 @@
-# grunt-gss v0.3.2
+# grunt-gss v0.3.3
 
 > Save your Google Spreadsheets locally as CSV or JSON.
 
@@ -9,13 +9,13 @@ This plugin requires Grunt `~0.4.0`
 If you haven't used [Grunt](http://gruntjs.com/) before, be sure to check out the [Getting Started](http://gruntjs.com/getting-started) guide, as it explains how to create a [Gruntfile](http://gruntjs.com/sample-gruntfile) as well as install and use Grunt plugins. Once you're familiar with that process, you may install this plugin with this command:
 
 ```shell
-npm install grunt-contrib-gss --save-dev
+npm install grunt-gss --save-dev
 ```
 
 Once the plugin has been installed, it may be enabled inside your Gruntfile with this line of JavaScript:
 
 ```js
-grunt.loadNpmTasks('grunt-contrib-gss');
+grunt.loadNpmTasks('grunt-gss');
 ```
 
 ### Overview
@@ -41,7 +41,7 @@ grunt.initConfig({
         // can also be specified manually to 'number', 'string', or 'array'
         typeMapping: {
           col1: 'string',
-          col4: 'arra
+          col4: 'arr'
         }
       },
       files: {
