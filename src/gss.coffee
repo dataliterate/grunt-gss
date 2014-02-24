@@ -3,6 +3,7 @@ module.exports = (grunt) ->
   all = require('node-promise').all
   csv2json = require './lib/csv2json'
   done = undefined
+  extend = require './lib/extend'
   googleapis = require 'googleapis'
   http = require 'http'
   open = require 'open'
@@ -76,7 +77,7 @@ module.exports = (grunt) ->
   keyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/
   grunt.registerMultiTask 'gss', ->
     done = @async()
-    opts = @data.options
+    opts = @data.options or {}
     files = []
     if toType @data.files is 'array'
       for dest, src of @data.files
@@ -84,6 +85,14 @@ module.exports = (grunt) ->
         file.src = src
         file.dest = dest
         file.opts = opts
+        files.push file
+    else # 'object'
+      for k, file of @data.files
+        extend file, JSON.parse file.src.replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
+        if file.options
+          file.opts = extend extend({}, opts), file.options
+          delete file.options
+        else file.opts = opts
         files.push file
     oauth2client = new OAuth2Client opts.clientId, opts.clientSecret, 'http://localhost:4477/'
 

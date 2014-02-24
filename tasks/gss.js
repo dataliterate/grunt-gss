@@ -1,8 +1,9 @@
 module.exports = function(grunt) {
-  var OAuth2Client, Promise, all, csv2json, done, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, keyAndGidRx, open, querystring, request, toType, _files;
+  var OAuth2Client, Promise, all, csv2json, done, extend, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, keyAndGidRx, open, querystring, request, toType, _files;
   all = require('node-promise').all;
   csv2json = require('./lib/csv2json');
   done = void 0;
+  extend = require('./lib/extend');
   googleapis = require('googleapis');
   http = require('http');
   open = require('open');
@@ -111,9 +112,9 @@ module.exports = function(grunt) {
   floatRx = /^\d+\.\d+$/i;
   keyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/;
   grunt.registerMultiTask('gss', function() {
-    var dest, file, files, next, oauth2client, opts, src, _ref;
+    var dest, file, files, k, next, oauth2client, opts, src, _ref, _ref1;
     done = this.async();
-    opts = this.data.options;
+    opts = this.data.options || {};
     files = [];
     if (toType(this.data.files === 'array')) {
       _ref = this.data.files;
@@ -125,11 +126,24 @@ module.exports = function(grunt) {
         file.opts = opts;
         files.push(file);
       }
+    } else {
+      _ref1 = this.data.files;
+      for (k in _ref1) {
+        file = _ref1[k];
+        extend(file, JSON.parse(file.src.replace(keyAndGidRx, '{"key":"$1","gid":"$2"}')));
+        if (file.options) {
+          file.opts = extend(extend({}, opts), file.options);
+          delete file.options;
+        } else {
+          file.opts = opts;
+        }
+        files.push(file);
+      }
     }
     oauth2client = new OAuth2Client(opts.clientId, opts.clientSecret, 'http://localhost:4477/');
     return (next = function(file) {
       return getSheet(file.key, file.gid, oauth2client).then(function(resp) {
-        var arr, arrStr, el, el1, field, fields, key, lv1, lv2, pos, type, types, val, _i, _j, _k, _len, _len1, _len2, _ref1;
+        var arr, arrStr, el, el1, field, fields, key, lv1, lv2, pos, type, types, val, _i, _j, _k, _len, _len1, _len2, _ref2;
         if (resp.body.length) {
           if (file.opts.saveJson) {
             arrStr = csv2json(resp.body);
@@ -163,9 +177,9 @@ module.exports = function(grunt) {
               if (file.opts.typeMapping) {
                 fields = [];
                 types = [];
-                _ref1 = file.opts.typeMapping;
-                for (field in _ref1) {
-                  type = _ref1[field];
+                _ref2 = file.opts.typeMapping;
+                for (field in _ref2) {
+                  type = _ref2[field];
                   fields.push(field);
                   types.push(type);
                 }
