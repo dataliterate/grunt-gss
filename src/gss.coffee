@@ -13,18 +13,26 @@ module.exports = (grunt) ->
   Promise = require('node-promise').Promise
   toType = (obj) -> ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase()
 
+  _sheets = {}
   getSheet = (fileId, sheetId, oauth2client) ->
     promise = new Promise()
-    getFile(fileId, oauth2client).then (file) ->
-      root = 'https://docs.google.com/feeds/download/spreadsheets/Export'
-      params = key: file.id, exportFormat: 'csv', gid: sheetId
-      opts =
-        uri: "#{root}?#{querystring.stringify params}"
-        headers: Authorization: "Bearer #{oauth2client.credentials.access_token}"
-      request opts, (err, resp) ->
-        if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
-        grunt.log.writeln 'getSheet: ok'
-        promise.resolve resp
+    if _sheets[fileId] and _sheets[fileId][sheetId]
+      setTimeout promise.resolve(_sheets[fileId][sheetId]), 1
+      grunt.log.writeln 'getSheet: ok'
+    else
+      getFile(fileId, oauth2client).then (file) ->
+        root = 'https://docs.google.com/feeds/download/spreadsheets/Export'
+        params = key: file.id, exportFormat: 'csv', gid: sheetId
+        opts =
+          uri: "#{root}?#{querystring.stringify params}"
+          headers: Authorization: "Bearer #{oauth2client.credentials.access_token}"
+        request opts, (err, resp) ->
+          if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
+          grunt.log.writeln 'getSheet: ok'
+          # cache
+          _sheets[fileId] = {} unless _sheets[fileId]
+          _sheets[fileId][sheetId] = resp
+          promise.resolve resp
     promise
 
   _files = {}
@@ -35,6 +43,7 @@ module.exports = (grunt) ->
       client.drive.files.get({fileId}).execute (err, file) ->
         if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
         grunt.log.writeln 'getFile: ok'
+        # cache
         _files[fileId] = file
         promise.resolve file
     promise

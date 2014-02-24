@@ -1,5 +1,5 @@
 module.exports = function(grunt) {
-  var OAuth2Client, Promise, all, csv2json, done, extend, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, keyAndGidRx, open, querystring, request, toType, _files;
+  var OAuth2Client, Promise, all, csv2json, done, extend, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, keyAndGidRx, open, querystring, request, toType, _files, _sheets;
   all = require('node-promise').all;
   csv2json = require('./lib/csv2json');
   done = void 0;
@@ -14,31 +14,41 @@ module.exports = function(grunt) {
   toType = function(obj) {
     return {}.toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
   };
+  _sheets = {};
   getSheet = function(fileId, sheetId, oauth2client) {
     var promise;
     promise = new Promise();
-    getFile(fileId, oauth2client).then(function(file) {
-      var opts, params, root;
-      root = 'https://docs.google.com/feeds/download/spreadsheets/Export';
-      params = {
-        key: file.id,
-        exportFormat: 'csv',
-        gid: sheetId
-      };
-      opts = {
-        uri: "" + root + "?" + (querystring.stringify(params)),
-        headers: {
-          Authorization: "Bearer " + oauth2client.credentials.access_token
-        }
-      };
-      return request(opts, function(err, resp) {
-        if (err) {
-          grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
-        }
-        grunt.log.writeln('getSheet: ok');
-        return promise.resolve(resp);
+    if (_sheets[fileId] && _sheets[fileId][sheetId]) {
+      setTimeout(promise.resolve(_sheets[fileId][sheetId]), 1);
+      grunt.log.writeln('getSheet: ok');
+    } else {
+      getFile(fileId, oauth2client).then(function(file) {
+        var opts, params, root;
+        root = 'https://docs.google.com/feeds/download/spreadsheets/Export';
+        params = {
+          key: file.id,
+          exportFormat: 'csv',
+          gid: sheetId
+        };
+        opts = {
+          uri: "" + root + "?" + (querystring.stringify(params)),
+          headers: {
+            Authorization: "Bearer " + oauth2client.credentials.access_token
+          }
+        };
+        return request(opts, function(err, resp) {
+          if (err) {
+            grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
+          }
+          grunt.log.writeln('getSheet: ok');
+          if (!_sheets[fileId]) {
+            _sheets[fileId] = {};
+          }
+          _sheets[fileId][sheetId] = resp;
+          return promise.resolve(resp);
+        });
       });
-    });
+    }
     return promise;
   };
   _files = {};
