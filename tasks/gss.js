@@ -111,27 +111,31 @@ module.exports = function(grunt) {
   floatRx = /^\d+\.\d+$/i;
   keyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/;
   grunt.registerMultiTask('gss', function() {
-    var file, files, link, next, oauth2client, opts, path, _ref;
+    var dest, file, files, next, oauth2client, opts, src, _ref;
     done = this.async();
     opts = this.data.options;
     files = [];
-    _ref = this.data.files;
-    for (path in _ref) {
-      link = _ref[path];
-      file = JSON.parse(link.replace(keyAndGidRx, '{"key":"$1","gid":"$2"}'));
-      file.path = path;
-      files.push(file);
+    if (toType(this.data.files === 'array')) {
+      _ref = this.data.files;
+      for (dest in _ref) {
+        src = _ref[dest];
+        file = JSON.parse(src.replace(keyAndGidRx, '{"key":"$1","gid":"$2"}'));
+        file.src = src;
+        file.dest = dest;
+        file.opts = opts;
+        files.push(file);
+      }
     }
     oauth2client = new OAuth2Client(opts.clientId, opts.clientSecret, 'http://localhost:4477/');
     return (next = function(file) {
       return getSheet(file.key, file.gid, oauth2client).then(function(resp) {
         var arr, arrStr, el, el1, field, fields, key, lv1, lv2, pos, type, types, val, _i, _j, _k, _len, _len1, _len2, _ref1;
         if (resp.body.length) {
-          if (opts.saveJson) {
+          if (file.opts.saveJson) {
             arrStr = csv2json(resp.body);
-            if (opts.prettifyJson) {
+            if (file.opts.prettifyJson) {
               arr = JSON.parse(arrStr);
-              if (opts.typeDetection) {
+              if (file.opts.typeDetection) {
                 for (_i = 0, _len = arr.length; _i < _len; _i++) {
                   el = arr[_i];
                   for (key in el) {
@@ -156,10 +160,10 @@ module.exports = function(grunt) {
                   }
                 }
               }
-              if (opts.typeMapping) {
+              if (file.opts.typeMapping) {
                 fields = [];
                 types = [];
-                _ref1 = opts.typeMapping;
+                _ref1 = file.opts.typeMapping;
                 for (field in _ref1) {
                   type = _ref1[field];
                   fields.push(field);
@@ -183,12 +187,12 @@ module.exports = function(grunt) {
                   }
                 }
               }
-              grunt.file.write(file.path, JSON.stringify(arr, null, 2));
+              grunt.file.write(file.dest, JSON.stringify(arr, null, 2));
             } else {
-              grunt.file.write(file.path, arrStr);
+              grunt.file.write(file.dest, arrStr);
             }
           } else {
-            grunt.file.write(file.path, resp.body);
+            grunt.file.write(file.dest, resp.body);
           }
         }
         if (files.length) {

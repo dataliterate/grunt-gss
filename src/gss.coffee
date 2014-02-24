@@ -78,22 +78,25 @@ module.exports = (grunt) ->
     done = @async()
     opts = @data.options
     files = []
-    for path, link of @data.files
-      file = JSON.parse link.replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
-      file.path = path
-      files.push file
+    if toType @data.files is 'array'
+      for dest, src of @data.files
+        file = JSON.parse src.replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
+        file.src = src
+        file.dest = dest
+        file.opts = opts
+        files.push file
     oauth2client = new OAuth2Client opts.clientId, opts.clientSecret, 'http://localhost:4477/'
 
     # sync, could be implt as async after token is retrieved
     (next = (file) ->
       getSheet(file.key, file.gid, oauth2client).then (resp) ->
         if resp.body.length
-          if opts.saveJson
+          if file.opts.saveJson
             arrStr = csv2json resp.body
-            if opts.prettifyJson
+            if file.opts.prettifyJson
               arr = JSON.parse arrStr
               # auto json field type
-              if opts.typeDetection
+              if file.opts.typeDetection
                 for el in arr
                   for key, val of el
                     if intRx.test val then el[key] = parseInt val
@@ -107,10 +110,10 @@ module.exports = (grunt) ->
                         el[key] = lv2
                       else el[key] = val.split ','
               # enforce json field type
-              if opts.typeMapping
+              if file.opts.typeMapping
                 fields = []
                 types = []
-                for field, type of opts.typeMapping
+                for field, type of file.opts.typeMapping
                   fields.push field
                   types.push type
                 for el in arr
@@ -122,11 +125,11 @@ module.exports = (grunt) ->
                         else if type is 'string' then el[key] = val.toString()
                         else if type is 'number' then el[key] = parseFloat val or 0
               # save pretty json array
-              grunt.file.write file.path, JSON.stringify arr, null, 2
+              grunt.file.write file.dest, JSON.stringify arr, null, 2
             # save raw json array
-            else grunt.file.write file.path, arrStr
+            else grunt.file.write file.dest, arrStr
           # save csv
-          else grunt.file.write file.path, resp.body
+          else grunt.file.write file.dest, resp.body
         if files.length then next files.shift()
         else done true
     ).call @, files.shift()
