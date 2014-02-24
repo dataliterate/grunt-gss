@@ -16,10 +16,10 @@ module.exports = function(grunt) {
   };
   _sheets = {};
   getSheet = function(fileId, sheetId, oauth2client) {
-    var promise;
+    var promise, sheet;
     promise = new Promise();
-    if (_sheets[fileId] && _sheets[fileId][sheetId]) {
-      setTimeout(promise.resolve(_sheets[fileId][sheetId]), 1);
+    if (sheet = _sheets["" + fileId + sheetId]) {
+      promise.resolve(sheet);
       grunt.log.writeln('getSheet: ok');
     } else {
       getFile(fileId, oauth2client).then(function(file) {
@@ -41,11 +41,7 @@ module.exports = function(grunt) {
             grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
           }
           grunt.log.writeln('getSheet: ok');
-          if (!_sheets[fileId]) {
-            _sheets[fileId] = {};
-          }
-          _sheets[fileId][sheetId] = resp;
-          return promise.resolve(resp);
+          return promise.resolve(_sheets["" + fileId + sheetId] = resp);
         });
       });
     }
@@ -53,10 +49,10 @@ module.exports = function(grunt) {
   };
   _files = {};
   getFile = function(fileId, oauth2client) {
-    var promise;
+    var file, promise;
     promise = new Promise();
-    if (_files[fileId]) {
-      promise.resolve(_files[fileId]);
+    if (file = _files[fileId]) {
+      promise.resolve(file);
     } else {
       getClient('drive', 'v2', oauth2client).then(function(client) {
         return client.drive.files.get({
@@ -66,8 +62,7 @@ module.exports = function(grunt) {
             grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
           }
           grunt.log.writeln('getFile: ok');
-          _files[fileId] = file;
-          return promise.resolve(file);
+          return promise.resolve(_files[fileId] = file);
         });
       });
     }

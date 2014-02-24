@@ -16,8 +16,8 @@ module.exports = (grunt) ->
   _sheets = {}
   getSheet = (fileId, sheetId, oauth2client) ->
     promise = new Promise()
-    if _sheets[fileId] and _sheets[fileId][sheetId]
-      setTimeout promise.resolve(_sheets[fileId][sheetId]), 1
+    if sheet = _sheets["#{fileId}#{sheetId}"]
+      promise.resolve sheet
       grunt.log.writeln 'getSheet: ok'
     else
       getFile(fileId, oauth2client).then (file) ->
@@ -29,23 +29,18 @@ module.exports = (grunt) ->
         request opts, (err, resp) ->
           if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
           grunt.log.writeln 'getSheet: ok'
-          # cache
-          _sheets[fileId] = {} unless _sheets[fileId]
-          _sheets[fileId][sheetId] = resp
-          promise.resolve resp
+          promise.resolve _sheets["#{fileId}#{sheetId}"] = resp
     promise
 
   _files = {}
   getFile = (fileId, oauth2client) ->
     promise = new Promise()
-    if _files[fileId] then promise.resolve _files[fileId]
+    if file = _files[fileId] then promise.resolve file
     else getClient('drive', 'v2', oauth2client).then (client) ->
       client.drive.files.get({fileId}).execute (err, file) ->
         if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
         grunt.log.writeln 'getFile: ok'
-        # cache
-        _files[fileId] = file
-        promise.resolve file
+        promise.resolve _files[fileId] = file
     promise
 
   getClient = (client, version, oauth2client) ->
