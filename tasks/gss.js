@@ -117,40 +117,31 @@ module.exports = function(grunt) {
     return promise;
   };
   convertFields = function(arr, mapping) {
-    var el, el1, field, fields, key, lv1, lv2, pos, type, types, val, _i, _j, _len, _len1, _results, _results1;
+    var el, el1, field, fields, key, lv1, lv2, pos, type, types, val, _i, _j, _k, _len, _len1, _len2;
     if (!mapping) {
-      _results = [];
       for (_i = 0, _len = arr.length; _i < _len; _i++) {
         el = arr[_i];
-        _results.push((function() {
-          var _j, _len1, _results1;
-          _results1 = [];
-          for (key in el) {
-            val = el[key];
-            if (intRx.test(val)) {
-              _results1.push(el[key] = parseInt(val));
-            } else if (floatRx.test(val)) {
-              _results1.push(el[key] = parseFloat(val));
-            } else if (val.indexOf(',') !== -1) {
-              if (val.indexOf('|') !== -1) {
-                lv1 = val.split('|');
-                lv2 = [];
-                for (_j = 0, _len1 = lv1.length; _j < _len1; _j++) {
-                  el1 = lv1[_j];
-                  lv2.push(el1.split(','));
-                }
-                _results1.push(el[key] = lv2);
-              } else {
-                _results1.push(el[key] = val.split(','));
+        for (key in el) {
+          val = el[key];
+          if (intRx.test(val)) {
+            el[key] = parseInt(val);
+          } else if (floatRx.test(val)) {
+            el[key] = parseFloat(val);
+          } else if (val.indexOf(',') !== -1) {
+            if (val.indexOf('|') !== -1) {
+              lv1 = val.split('|');
+              lv2 = [];
+              for (_j = 0, _len1 = lv1.length; _j < _len1; _j++) {
+                el1 = lv1[_j];
+                lv2.push(el1.split(','));
               }
+              el[key] = lv2;
             } else {
-              _results1.push(void 0);
+              el[key] = val.split(',');
             }
           }
-          return _results1;
-        })());
+        }
       }
-      return _results;
     } else {
       fields = [];
       types = [];
@@ -159,37 +150,27 @@ module.exports = function(grunt) {
         fields.push(field);
         types.push(type);
       }
-      _results1 = [];
-      for (_j = 0, _len1 = arr.length; _j < _len1; _j++) {
-        el = arr[_j];
-        _results1.push((function() {
-          var _results2;
-          _results2 = [];
-          for (key in el) {
-            val = el[key];
-            if ((pos = fields.indexOf(key)) !== -1) {
-              if (toType(val) !== (type = types[pos])) {
-                if (type === 'array') {
-                  _results2.push(el[key] = val ? [val] : []);
-                } else if (type === 'string') {
-                  _results2.push(el[key] = val.toString());
-                } else if (type === 'number') {
-                  _results2.push(el[key] = parseFloat(val || 0));
-                } else {
-                  _results2.push(void 0);
-                }
-              } else {
-                _results2.push(void 0);
+      for (_k = 0, _len2 = arr.length; _k < _len2; _k++) {
+        el = arr[_k];
+        for (key in el) {
+          val = el[key];
+          if ((pos = fields.indexOf(key)) !== -1) {
+            if (toType(val) !== (type = types[pos])) {
+              if (type === 'array') {
+                el[key] = val ? [val] : [];
+              } else if (type === 'string') {
+                el[key] = val.toString();
+              } else if (type === 'number') {
+                el[key] = parseFloat(val || 0);
+              } else if (type === 'undefined') {
+                delete el[key];
               }
-            } else {
-              _results2.push(void 0);
             }
           }
-          return _results2;
-        })());
+        }
       }
-      return _results1;
     }
+    return null;
   };
   intRx = /^\d+$/i;
   floatRx = /^\d+\.\d+$/i;
