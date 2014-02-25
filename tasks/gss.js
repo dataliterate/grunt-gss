@@ -150,69 +150,68 @@ module.exports = function(grunt) {
     }
     return (next = function(file) {
       return getSheet(file.key, file.gid, opts.clientId, opts.clientSecret, 'http://localhost:4477/').then(function(resp) {
-        var arr, arrStr, el, el1, field, fields, key, lv1, lv2, pos, type, types, val, _i, _j, _k, _len, _len1, _len2, _ref2;
-        if (file.opts.saveJson) {
-          arrStr = csv2json(resp.body);
+        var arr, el, el1, field, fields, key, lv1, lv2, pos, type, types, val, _i, _j, _k, _len, _len1, _len2, _ref2;
+        if (!file.opts.saveJson) {
+          grunt.file.write(file.dest, resp.body);
+        } else {
+          arr = JSON.parse(csv2json(resp.body));
+          if (file.opts.typeDetection) {
+            for (_i = 0, _len = arr.length; _i < _len; _i++) {
+              el = arr[_i];
+              for (key in el) {
+                val = el[key];
+                if (intRx.test(val)) {
+                  el[key] = parseInt(val);
+                } else if (floatRx.test(val)) {
+                  el[key] = parseFloat(val);
+                } else if (val.indexOf(',') !== -1) {
+                  if (val.indexOf('|') !== -1) {
+                    lv1 = val.split('|');
+                    lv2 = [];
+                    for (_j = 0, _len1 = lv1.length; _j < _len1; _j++) {
+                      el1 = lv1[_j];
+                      lv2.push(el1.split(','));
+                    }
+                    el[key] = lv2;
+                  } else {
+                    el[key] = val.split(',');
+                  }
+                }
+              }
+            }
+          }
+          if (file.opts.typeMapping) {
+            fields = [];
+            types = [];
+            _ref2 = file.opts.typeMapping;
+            for (field in _ref2) {
+              type = _ref2[field];
+              fields.push(field);
+              types.push(type);
+            }
+            for (_k = 0, _len2 = arr.length; _k < _len2; _k++) {
+              el = arr[_k];
+              for (key in el) {
+                val = el[key];
+                if ((pos = fields.indexOf(key)) !== -1) {
+                  if (toType(val) !== (type = types[pos])) {
+                    if (type === 'array') {
+                      el[key] = val ? [val] : [];
+                    } else if (type === 'string') {
+                      el[key] = val.toString();
+                    } else if (type === 'number') {
+                      el[key] = parseFloat(val || 0);
+                    }
+                  }
+                }
+              }
+            }
+          }
           if (file.opts.prettifyJson) {
-            arr = JSON.parse(arrStr);
-            if (file.opts.typeDetection) {
-              for (_i = 0, _len = arr.length; _i < _len; _i++) {
-                el = arr[_i];
-                for (key in el) {
-                  val = el[key];
-                  if (intRx.test(val)) {
-                    el[key] = parseInt(val);
-                  } else if (floatRx.test(val)) {
-                    el[key] = parseFloat(val);
-                  } else if (val.indexOf(',') !== -1) {
-                    if (val.indexOf('|') !== -1) {
-                      lv1 = val.split('|');
-                      lv2 = [];
-                      for (_j = 0, _len1 = lv1.length; _j < _len1; _j++) {
-                        el1 = lv1[_j];
-                        lv2.push(el1.split(','));
-                      }
-                      el[key] = lv2;
-                    } else {
-                      el[key] = val.split(',');
-                    }
-                  }
-                }
-              }
-            }
-            if (file.opts.typeMapping) {
-              fields = [];
-              types = [];
-              _ref2 = file.opts.typeMapping;
-              for (field in _ref2) {
-                type = _ref2[field];
-                fields.push(field);
-                types.push(type);
-              }
-              for (_k = 0, _len2 = arr.length; _k < _len2; _k++) {
-                el = arr[_k];
-                for (key in el) {
-                  val = el[key];
-                  if ((pos = fields.indexOf(key)) !== -1) {
-                    if (toType(val) !== (type = types[pos])) {
-                      if (type === 'array') {
-                        el[key] = val ? [val] : [];
-                      } else if (type === 'string') {
-                        el[key] = val.toString();
-                      } else if (type === 'number') {
-                        el[key] = parseFloat(val || 0);
-                      }
-                    }
-                  }
-                }
-              }
-            }
             grunt.file.write(file.dest, JSON.stringify(arr, null, 2));
           } else {
-            grunt.file.write(file.dest, arrStr);
+            grunt.file.write(file.dest, JSON.stringify(arr));
           }
-        } else {
-          grunt.file.write(file.dest, resp.body);
         }
         if (files.length) {
           return next(files.shift());

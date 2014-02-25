@@ -71,7 +71,7 @@ module.exports = function(grunt) {
             dest: 'Sheet2.json',
             src: 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1',
             options: {
-              // prettifyJson: false,
+              prettifyJson: false,
               typeMapping: {
                 col1: 'number'
               }
