@@ -1,4 +1,4 @@
-# grunt-gss v0.3.3
+# grunt-gss v0.4.0
 
 > Save your Google Spreadsheets locally as CSV or JSON.
 
@@ -26,6 +26,7 @@ Trying to make it a task for CouchApps.
 ### The Task
 ```javascript
 grunt.initConfig({
+  // https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1
   gss: {
     products: {
       options: {
@@ -58,8 +59,36 @@ grunt.initConfig({
       },
       files: {
         'Sheet1.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=0',
-        'Sheet2.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1'
+        'Sheet2.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1',
+        // empty file will be saved too
+        'Sheet3.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=2'
       }
+    },
+    products3: {
+      options: {
+        clientId: '785010223027.apps.googleusercontent.com',
+        clientSecret: 'nwQ2UedRysgbNZl6jE3I77Ji',
+        saveJson: true,
+        prettifyJson: true,
+        typeDetection: true,
+        typeMapping: {
+          col1: 'string',
+          col4: 'arr'
+        }
+      },
+      files: [
+        {
+          dest: 'Sheet2.json',
+          src: 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1',
+          // EXTENDING options above
+          options: {
+            prettifyJson: false,
+            typeMapping: {
+              col1: 'number'
+            }
+          }
+        }
+      ]
     }
   }
 });
@@ -84,6 +113,7 @@ grunt.initConfig({
 
 ## Release History
 
- * 2014-02-04   v0.3.0   typeMapping, new option to enforce field type
- * 2014-01-31   v0.2.0   implement save json, and update options
- * 2014-01-29   v0.1.0   initial release
+ * 2014-02-04   v0.4.0   Add files object array to support options per file
+ * 2014-02-04   v0.3.0   Add typeMapping, new option to enforce field type
+ * 2014-01-31   v0.2.0   Implement save json, and update options
+ * 2014-01-29   v0.1.0   Initial release

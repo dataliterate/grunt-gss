@@ -3,6 +3,7 @@ module.exports = (grunt) ->
   all = require('node-promise').all
   csv2json = require './lib/csv2json'
   done = undefined
+  extend = require './lib/extend'
   googleapis = require 'googleapis'
   http = require 'http'
   open = require 'open'
@@ -12,30 +13,38 @@ module.exports = (grunt) ->
   Promise = require('node-promise').Promise
   toType = (obj) -> ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase()
 
-  getSheet = (fileId, sheetId, oauth2client) ->
+  _sheets = {}
+  _oauth2clients = {}
+  getSheet = (fileId, sheetId, clientId, clientSecret, redirectUri) ->
     promise = new Promise()
-    getFile(fileId, oauth2client).then (file) ->
-      root = 'https://docs.google.com/feeds/download/spreadsheets/Export'
-      params = key: file.id, exportFormat: 'csv', gid: sheetId
-      opts =
-        uri: "#{root}?#{querystring.stringify params}"
-        headers: Authorization: "Bearer #{oauth2client.credentials.access_token}"
-      request opts, (err, resp) ->
-        if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
-        grunt.log.writeln 'getSheet: ok'
-        promise.resolve resp
+    if sheet = _sheets["#{fileId}#{sheetId}"]
+      promise.resolve sheet
+      grunt.log.writeln 'getSheet: ok'
+    else
+      oauth2client = _oauth2clients["#{clientId}#{clientSecret}"] or
+        new OAuth2Client clientId, clientSecret, redirectUri
+      getFile(fileId, oauth2client).then (file) ->
+        root = 'https://docs.google.com/feeds/download/spreadsheets/Export'
+        params = key: file.id, exportFormat: 'csv', gid: sheetId
+        opts =
+          uri: "#{root}?#{querystring.stringify params}"
+          headers: Authorization: "Bearer #{oauth2client.credentials.access_token}"
+        request opts, (err, resp) ->
+          if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
+          grunt.log.writeln 'getSheet: ok'
+          _oauth2clients["#{oauth2client.clientId_}#{oauth2client.clientSecret_}"] = oauth2client
+          promise.resolve _sheets["#{fileId}#{sheetId}"] = resp
     promise
 
   _files = {}
   getFile = (fileId, oauth2client) ->
     promise = new Promise()
-    if _files[fileId] then promise.resolve _files[fileId]
+    if file = _files[fileId] then promise.resolve file
     else getClient('drive', 'v2', oauth2client).then (client) ->
       client.drive.files.get({fileId}).execute (err, file) ->
         if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
         grunt.log.writeln 'getFile: ok'
-        _files[fileId] = file
-        promise.resolve file
+        promise.resolve _files[fileId] = file
     promise
 
   getClient = (client, version, oauth2client) ->
@@ -71,62 +80,80 @@ module.exports = (grunt) ->
     .listen 4477 # ggss
     promise
 
+  convertFields = (arr, mapping) ->
+    # auto
+    if not mapping
+      for el in arr
+        for key, val of el
+          if intRx.test val then el[key] = parseInt val
+          else if floatRx.test val then el[key] = parseFloat val
+          else if val.indexOf(',') isnt -1
+            # comma become second delimiter if pipe exists
+            if val.indexOf('|') isnt -1
+              lv1 = val.split '|'
+              lv2 = []
+              lv2.push el1.split ',' for el1 in lv1
+              el[key] = lv2
+            else el[key] = val.split ','
+    # manual
+    else
+      fields = []
+      types = []
+      for field, type of mapping
+        fields.push field
+        types.push type
+      for el in arr
+        for key, val of el
+          if (pos = fields.indexOf key) isnt -1
+            if toType(val) isnt type = types[pos]
+              if type is 'array'
+                el[key] = if val then [val] else []
+              else if type is 'string' then el[key] = val.toString()
+              else if type is 'number' then el[key] = parseFloat val or 0
+
   intRx = /^\d+$/i
   floatRx = /^\d+\.\d+$/i
   keyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/
+
+  # the task
   grunt.registerMultiTask 'gss', ->
     done = @async()
-    opts = @data.options
-    files = []
-    for path, link of @data.files
-      file = JSON.parse link.replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
-      file.path = path
-      files.push file
-    oauth2client = new OAuth2Client opts.clientId, opts.clientSecret, 'http://localhost:4477/'
+    opts = @data.options or {}
 
-    # sync, could be implt as async after token is retrieved
+    # prepare files, [{key:string, gid:string, src:string, dest:string, opts:object}]
+    files = []
+    if toType(@data.files) is 'object'
+      for dest, src of @data.files
+        file = JSON.parse src.replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
+        file.src = src
+        file.dest = dest
+        file.opts = opts
+        files.push file
+    else # object array
+      for k, file of @data.files
+        # file.src string is somehow being converted to an array
+        extend file, JSON.parse file.src[0].replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
+        if file.options
+          file.opts = extend extend({}, opts), file.options
+          delete file.options
+        else file.opts = opts
+        files.push file
+
+    # loop and save files, could be implt as async after token is retrieved
     (next = (file) ->
-      getSheet(file.key, file.gid, oauth2client).then (resp) ->
-        if resp.body.length
-          if opts.saveJson
-            arrStr = csv2json resp.body
-            if opts.prettifyJson
-              arr = JSON.parse arrStr
-              # auto json field type
-              if opts.typeDetection
-                for el in arr
-                  for key, val of el
-                    if intRx.test val then el[key] = parseInt val
-                    else if floatRx.test val then el[key] = parseFloat val
-                    else if val.indexOf(',') isnt -1
-                      # comma become second delimiter if pipe exists
-                      if val.indexOf('|') isnt -1
-                        lv1 = val.split '|'
-                        lv2 = []
-                        lv2.push el1.split ',' for el1 in lv1
-                        el[key] = lv2
-                      else el[key] = val.split ','
-              # enforce json field type
-              if opts.typeMapping
-                fields = []
-                types = []
-                for field, type of opts.typeMapping
-                  fields.push field
-                  types.push type
-                for el in arr
-                  for key, val of el
-                    if (pos = fields.indexOf key) isnt -1
-                      if toType(val) isnt type = types[pos]
-                        if type is 'array'
-                          el[key] = if val then [val] else []
-                        else if type is 'string' then el[key] = val.toString()
-                        else if type is 'number' then el[key] = parseFloat val or 0
-              # save pretty json array
-              grunt.file.write file.path, JSON.stringify arr, null, 2
-            # save raw json array
-            else grunt.file.write file.path, arrStr
-          # save csv
-          else grunt.file.write file.path, resp.body
+      getSheet(file.key, file.gid, opts.clientId, opts.clientSecret, 'http://localhost:4477/').then (resp) ->
+        # save csv
+        if not file.opts.saveJson then grunt.file.write file.dest, resp.body
+        # save json
+        else
+          arr = JSON.parse csv2json resp.body
+          if file.opts.typeDetection then convertFields arr
+          if file.opts.typeMapping then convertFields arr, file.opts.typeMapping
+          # prettify
+          if file.opts.prettifyJson
+            grunt.file.write file.dest, JSON.stringify arr, null, 2
+          else grunt.file.write file.dest, JSON.stringify arr
+        # continue
         if files.length then next files.shift()
         else done true
     ).call @, files.shift()
