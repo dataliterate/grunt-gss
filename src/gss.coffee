@@ -14,12 +14,15 @@ module.exports = (grunt) ->
   toType = (obj) -> ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase()
 
   _sheets = {}
-  getSheet = (fileId, sheetId, oauth2client) ->
+  _oauth2clients = {}
+  getSheet = (fileId, sheetId, clientId, clientSecret, redirectUri) ->
     promise = new Promise()
     if sheet = _sheets["#{fileId}#{sheetId}"]
       promise.resolve sheet
       grunt.log.writeln 'getSheet: ok'
     else
+      oauth2client = _oauth2clients["#{clientId}#{clientSecret}"] or
+        new OAuth2Client clientId, clientSecret, redirectUri
       getFile(fileId, oauth2client).then (file) ->
         root = 'https://docs.google.com/feeds/download/spreadsheets/Export'
         params = key: file.id, exportFormat: 'csv', gid: sheetId
@@ -29,6 +32,7 @@ module.exports = (grunt) ->
         request opts, (err, resp) ->
           if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
           grunt.log.writeln 'getSheet: ok'
+          _oauth2clients["#{oauth2client.clientId_}#{oauth2client.clientSecret_}"] = oauth2client
           promise.resolve _sheets["#{fileId}#{sheetId}"] = resp
     promise
 
@@ -98,11 +102,10 @@ module.exports = (grunt) ->
           delete file.options
         else file.opts = opts
         files.push file
-    oauth2client = new OAuth2Client opts.clientId, opts.clientSecret, 'http://localhost:4477/'
 
     # sync, could be implt as async after token is retrieved
     (next = (file) ->
-      getSheet(file.key, file.gid, oauth2client).then (resp) ->
+      getSheet(file.key, file.gid, opts.clientId, opts.clientSecret, 'http://localhost:4477/').then (resp) ->
         if resp.body.length
           if file.opts.saveJson
             arrStr = csv2json resp.body

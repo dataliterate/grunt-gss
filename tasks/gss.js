@@ -1,5 +1,5 @@
 module.exports = function(grunt) {
-  var OAuth2Client, Promise, all, csv2json, done, extend, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, keyAndGidRx, open, querystring, request, toType, _files, _sheets;
+  var OAuth2Client, Promise, all, csv2json, done, extend, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, keyAndGidRx, open, querystring, request, toType, _files, _oauth2clients, _sheets;
   all = require('node-promise').all;
   csv2json = require('./lib/csv2json');
   done = void 0;
@@ -15,13 +15,15 @@ module.exports = function(grunt) {
     return {}.toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
   };
   _sheets = {};
-  getSheet = function(fileId, sheetId, oauth2client) {
-    var promise, sheet;
+  _oauth2clients = {};
+  getSheet = function(fileId, sheetId, clientId, clientSecret, redirectUri) {
+    var oauth2client, promise, sheet;
     promise = new Promise();
     if (sheet = _sheets["" + fileId + sheetId]) {
       promise.resolve(sheet);
       grunt.log.writeln('getSheet: ok');
     } else {
+      oauth2client = _oauth2clients["" + clientId + clientSecret] || new OAuth2Client(clientId, clientSecret, redirectUri);
       getFile(fileId, oauth2client).then(function(file) {
         var opts, params, root;
         root = 'https://docs.google.com/feeds/download/spreadsheets/Export';
@@ -41,6 +43,7 @@ module.exports = function(grunt) {
             grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
           }
           grunt.log.writeln('getSheet: ok');
+          _oauth2clients["" + oauth2client.clientId_ + oauth2client.clientSecret_] = oauth2client;
           return promise.resolve(_sheets["" + fileId + sheetId] = resp);
         });
       });
@@ -117,7 +120,7 @@ module.exports = function(grunt) {
   floatRx = /^\d+\.\d+$/i;
   keyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/;
   grunt.registerMultiTask('gss', function() {
-    var dest, file, files, k, next, oauth2client, opts, src, _ref, _ref1;
+    var dest, file, files, k, next, opts, src, _ref, _ref1;
     done = this.async();
     opts = this.data.options || {};
     files = [];
@@ -145,9 +148,8 @@ module.exports = function(grunt) {
         files.push(file);
       }
     }
-    oauth2client = new OAuth2Client(opts.clientId, opts.clientSecret, 'http://localhost:4477/');
     return (next = function(file) {
-      return getSheet(file.key, file.gid, oauth2client).then(function(resp) {
+      return getSheet(file.key, file.gid, opts.clientId, opts.clientSecret, 'http://localhost:4477/').then(function(resp) {
         var arr, arrStr, el, el1, field, fields, key, lv1, lv2, pos, type, types, val, _i, _j, _k, _len, _len1, _len2, _ref2;
         if (resp.body.length) {
           if (file.opts.saveJson) {
