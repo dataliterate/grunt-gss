@@ -20,19 +20,25 @@ module.exports = function(grunt) {
     gss: {
       products: {
         options: {
+          // from your Google API key
           clientId: '785010223027.apps.googleusercontent.com',
           clientSecret: 'nwQ2UedRysgbNZl6jE3I77Ji',
+          // output format
           saveJson: true,
+          // options for JSON
           prettifyJson: true,
+          // do parseInt, parseFloat, or split(',') automatically
           typeDetection: true,
+          // can also be specified manually to 'number', 'string', or 'array'
           typeMapping: {
             col1: 'string',
-            col4: 'array'
+            col4: 'arr'
           }
         },
         files: {
+          // local save path : link to your worksheet
           'Sheet1.json': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=0',
-          // 'Sheet2.json': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1'
+          'Sheet2.json': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1'
         }
       },
       // save as csv
@@ -42,8 +48,10 @@ module.exports = function(grunt) {
           clientSecret: 'nwQ2UedRysgbNZl6jE3I77Ji'
         },
         files: {
-          // 'Sheet1.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=0',
-          'Sheet2.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1'
+          'Sheet1.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=0',
+          'Sheet2.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1',
+          // empty file will be saved too
+          'Sheet3.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=2'
         }
       }
     }

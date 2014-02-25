@@ -106,46 +106,45 @@ module.exports = (grunt) ->
     # sync, could be implt as async after token is retrieved
     (next = (file) ->
       getSheet(file.key, file.gid, opts.clientId, opts.clientSecret, 'http://localhost:4477/').then (resp) ->
-        if resp.body.length
-          if file.opts.saveJson
-            arrStr = csv2json resp.body
-            if file.opts.prettifyJson
-              arr = JSON.parse arrStr
-              # auto json field type
-              if file.opts.typeDetection
-                for el in arr
-                  for key, val of el
-                    if intRx.test val then el[key] = parseInt val
-                    else if floatRx.test val then el[key] = parseFloat val
-                    else if val.indexOf(',') isnt -1
-                      # comma become second delimiter if pipe exists
-                      if val.indexOf('|') isnt -1
-                        lv1 = val.split '|'
-                        lv2 = []
-                        lv2.push el1.split ',' for el1 in lv1
-                        el[key] = lv2
-                      else el[key] = val.split ','
-              # enforce json field type
-              if file.opts.typeMapping
-                fields = []
-                types = []
-                for field, type of file.opts.typeMapping
-                  fields.push field
-                  types.push type
-                for el in arr
-                  for key, val of el
-                    if (pos = fields.indexOf key) isnt -1
-                      if toType(val) isnt type = types[pos]
-                        if type is 'array'
-                          el[key] = if val then [val] else []
-                        else if type is 'string' then el[key] = val.toString()
-                        else if type is 'number' then el[key] = parseFloat val or 0
-              # save pretty json array
-              grunt.file.write file.dest, JSON.stringify arr, null, 2
-            # save raw json array
-            else grunt.file.write file.dest, arrStr
-          # save csv
-          else grunt.file.write file.dest, resp.body
+        if file.opts.saveJson
+          arrStr = csv2json resp.body
+          if file.opts.prettifyJson
+            arr = JSON.parse arrStr
+            # auto json field type
+            if file.opts.typeDetection
+              for el in arr
+                for key, val of el
+                  if intRx.test val then el[key] = parseInt val
+                  else if floatRx.test val then el[key] = parseFloat val
+                  else if val.indexOf(',') isnt -1
+                    # comma become second delimiter if pipe exists
+                    if val.indexOf('|') isnt -1
+                      lv1 = val.split '|'
+                      lv2 = []
+                      lv2.push el1.split ',' for el1 in lv1
+                      el[key] = lv2
+                    else el[key] = val.split ','
+            # enforce json field type
+            if file.opts.typeMapping
+              fields = []
+              types = []
+              for field, type of file.opts.typeMapping
+                fields.push field
+                types.push type
+              for el in arr
+                for key, val of el
+                  if (pos = fields.indexOf key) isnt -1
+                    if toType(val) isnt type = types[pos]
+                      if type is 'array'
+                        el[key] = if val then [val] else []
+                      else if type is 'string' then el[key] = val.toString()
+                      else if type is 'number' then el[key] = parseFloat val or 0
+            # save pretty json array
+            grunt.file.write file.dest, JSON.stringify arr, null, 2
+          # save raw json array
+          else grunt.file.write file.dest, arrStr
+        # save csv
+        else grunt.file.write file.dest, resp.body
         if files.length then next files.shift()
         else done true
     ).call @, files.shift()

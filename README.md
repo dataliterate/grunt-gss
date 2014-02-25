@@ -26,6 +26,7 @@ Trying to make it a task for CouchApps.
 ### The Task
 ```javascript
 grunt.initConfig({
+  // https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1
   gss: {
     products: {
       options: {
@@ -58,7 +59,9 @@ grunt.initConfig({
       },
       files: {
         'Sheet1.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=0',
-        'Sheet2.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1'
+        'Sheet2.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1',
+        // empty file will be saved too
+        'Sheet3.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=2'
       }
     }
   }
