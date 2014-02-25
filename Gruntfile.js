@@ -53,6 +53,31 @@ module.exports = function(grunt) {
           // empty file will be saved too
           'Sheet3.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=2'
         }
+      },
+      products3: {
+        options: {
+          clientId: '785010223027.apps.googleusercontent.com',
+          clientSecret: 'nwQ2UedRysgbNZl6jE3I77Ji',
+          saveJson: true,
+          prettifyJson: true,
+          typeDetection: true,
+          typeMapping: {
+            col1: 'string',
+            col4: 'arr'
+          }
+        },
+        files: [
+          {
+            dest: 'Sheet2.json',
+            src: 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1',
+            options: {
+              // prettifyJson: false,
+              typeMapping: {
+                col1: 'number'
+              }
+            }
+          }
+        ]
       }
     }
   });

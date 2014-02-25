@@ -124,7 +124,7 @@ module.exports = function(grunt) {
     done = this.async();
     opts = this.data.options || {};
     files = [];
-    if (toType(this.data.files === 'array')) {
+    if (toType(this.data.files) === 'object') {
       _ref = this.data.files;
       for (dest in _ref) {
         src = _ref[dest];
@@ -138,7 +138,7 @@ module.exports = function(grunt) {
       _ref1 = this.data.files;
       for (k in _ref1) {
         file = _ref1[k];
-        extend(file, JSON.parse(file.src.replace(keyAndGidRx, '{"key":"$1","gid":"$2"}')));
+        extend(file, JSON.parse(file.src[0].replace(keyAndGidRx, '{"key":"$1","gid":"$2"}')));
         if (file.options) {
           file.opts = extend(extend({}, opts), file.options);
           delete file.options;

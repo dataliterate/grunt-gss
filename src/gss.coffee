@@ -87,16 +87,17 @@ module.exports = (grunt) ->
     done = @async()
     opts = @data.options or {}
     files = []
-    if toType @data.files is 'array'
+    if toType(@data.files) is 'object'
       for dest, src of @data.files
         file = JSON.parse src.replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
         file.src = src
         file.dest = dest
         file.opts = opts
         files.push file
-    else # 'object'
+    else # object array
       for k, file of @data.files
-        extend file, JSON.parse file.src.replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
+        # file.src string is somehow being converted to an array
+        extend file, JSON.parse file.src[0].replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
         if file.options
           file.opts = extend extend({}, opts), file.options
           delete file.options
