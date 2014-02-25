@@ -42,6 +42,8 @@ grunt.initConfig({
         // can also be specified manually to 'number', 'string', or 'array'
         typeMapping: {
           col1: 'string',
+          // 'undefined' will not be saved
+          col2: 'undefined',
           col4: 'arr'
         }
       },

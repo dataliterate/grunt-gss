@@ -110,6 +110,8 @@ module.exports = (grunt) ->
                 el[key] = if val then [val] else []
               else if type is 'string' then el[key] = val.toString()
               else if type is 'number' then el[key] = parseFloat val or 0
+              else if type is 'undefined' then delete el[key]
+    null
 
   intRx = /^\d+$/i
   floatRx = /^\d+\.\d+$/i
