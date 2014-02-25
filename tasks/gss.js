@@ -1,5 +1,5 @@
 module.exports = function(grunt) {
-  var OAuth2Client, Promise, all, csv2json, done, extend, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, keyAndGidRx, open, querystring, request, toType, _files, _oauth2clients, _sheets;
+  var OAuth2Client, Promise, all, convertFields, csv2json, done, extend, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, keyAndGidRx, open, querystring, request, toType, _files, _oauth2clients, _sheets;
   all = require('node-promise').all;
   csv2json = require('./lib/csv2json');
   done = void 0;
@@ -116,6 +116,81 @@ module.exports = function(grunt) {
     }).listen(4477);
     return promise;
   };
+  convertFields = function(arr, mapping) {
+    var el, el1, field, fields, key, lv1, lv2, pos, type, types, val, _i, _j, _len, _len1, _results, _results1;
+    if (!mapping) {
+      _results = [];
+      for (_i = 0, _len = arr.length; _i < _len; _i++) {
+        el = arr[_i];
+        _results.push((function() {
+          var _j, _len1, _results1;
+          _results1 = [];
+          for (key in el) {
+            val = el[key];
+            if (intRx.test(val)) {
+              _results1.push(el[key] = parseInt(val));
+            } else if (floatRx.test(val)) {
+              _results1.push(el[key] = parseFloat(val));
+            } else if (val.indexOf(',') !== -1) {
+              if (val.indexOf('|') !== -1) {
+                lv1 = val.split('|');
+                lv2 = [];
+                for (_j = 0, _len1 = lv1.length; _j < _len1; _j++) {
+                  el1 = lv1[_j];
+                  lv2.push(el1.split(','));
+                }
+                _results1.push(el[key] = lv2);
+              } else {
+                _results1.push(el[key] = val.split(','));
+              }
+            } else {
+              _results1.push(void 0);
+            }
+          }
+          return _results1;
+        })());
+      }
+      return _results;
+    } else {
+      fields = [];
+      types = [];
+      for (field in mapping) {
+        type = mapping[field];
+        fields.push(field);
+        types.push(type);
+      }
+      _results1 = [];
+      for (_j = 0, _len1 = arr.length; _j < _len1; _j++) {
+        el = arr[_j];
+        _results1.push((function() {
+          var _results2;
+          _results2 = [];
+          for (key in el) {
+            val = el[key];
+            if ((pos = fields.indexOf(key)) !== -1) {
+              if (toType(val) !== (type = types[pos])) {
+                if (type === 'array') {
+                  _results2.push(el[key] = val ? [val] : []);
+                } else if (type === 'string') {
+                  _results2.push(el[key] = val.toString());
+                } else if (type === 'number') {
+                  _results2.push(el[key] = parseFloat(val || 0));
+                } else {
+                  _results2.push(void 0);
+                }
+              } else {
+                _results2.push(void 0);
+              }
+            } else {
+              _results2.push(void 0);
+            }
+          }
+          return _results2;
+        })());
+      }
+      return _results1;
+    }
+  };
   intRx = /^\d+$/i;
   floatRx = /^\d+\.\d+$/i;
   keyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/;
@@ -150,62 +225,16 @@ module.exports = function(grunt) {
     }
     return (next = function(file) {
       return getSheet(file.key, file.gid, opts.clientId, opts.clientSecret, 'http://localhost:4477/').then(function(resp) {
-        var arr, el, el1, field, fields, key, lv1, lv2, pos, type, types, val, _i, _j, _k, _len, _len1, _len2, _ref2;
+        var arr;
         if (!file.opts.saveJson) {
           grunt.file.write(file.dest, resp.body);
         } else {
           arr = JSON.parse(csv2json(resp.body));
           if (file.opts.typeDetection) {
-            for (_i = 0, _len = arr.length; _i < _len; _i++) {
-              el = arr[_i];
-              for (key in el) {
-                val = el[key];
-                if (intRx.test(val)) {
-                  el[key] = parseInt(val);
-                } else if (floatRx.test(val)) {
-                  el[key] = parseFloat(val);
-                } else if (val.indexOf(',') !== -1) {
-                  if (val.indexOf('|') !== -1) {
-                    lv1 = val.split('|');
-                    lv2 = [];
-                    for (_j = 0, _len1 = lv1.length; _j < _len1; _j++) {
-                      el1 = lv1[_j];
-                      lv2.push(el1.split(','));
-                    }
-                    el[key] = lv2;
-                  } else {
-                    el[key] = val.split(',');
-                  }
-                }
-              }
-            }
+            convertFields(arr);
           }
           if (file.opts.typeMapping) {
-            fields = [];
-            types = [];
-            _ref2 = file.opts.typeMapping;
-            for (field in _ref2) {
-              type = _ref2[field];
-              fields.push(field);
-              types.push(type);
-            }
-            for (_k = 0, _len2 = arr.length; _k < _len2; _k++) {
-              el = arr[_k];
-              for (key in el) {
-                val = el[key];
-                if ((pos = fields.indexOf(key)) !== -1) {
-                  if (toType(val) !== (type = types[pos])) {
-                    if (type === 'array') {
-                      el[key] = val ? [val] : [];
-                    } else if (type === 'string') {
-                      el[key] = val.toString();
-                    } else if (type === 'number') {
-                      el[key] = parseFloat(val || 0);
-                    }
-                  }
-                }
-              }
-            }
+            convertFields(arr, file.opts.typeMapping);
           }
           if (file.opts.prettifyJson) {
             grunt.file.write(file.dest, JSON.stringify(arr, null, 2));

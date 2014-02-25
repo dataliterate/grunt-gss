@@ -80,12 +80,47 @@ module.exports = (grunt) ->
     .listen 4477 # ggss
     promise
 
+  convertFields = (arr, mapping) ->
+    # auto
+    if not mapping
+      for el in arr
+        for key, val of el
+          if intRx.test val then el[key] = parseInt val
+          else if floatRx.test val then el[key] = parseFloat val
+          else if val.indexOf(',') isnt -1
+            # comma become second delimiter if pipe exists
+            if val.indexOf('|') isnt -1
+              lv1 = val.split '|'
+              lv2 = []
+              lv2.push el1.split ',' for el1 in lv1
+              el[key] = lv2
+            else el[key] = val.split ','
+    # manual
+    else
+      fields = []
+      types = []
+      for field, type of mapping
+        fields.push field
+        types.push type
+      for el in arr
+        for key, val of el
+          if (pos = fields.indexOf key) isnt -1
+            if toType(val) isnt type = types[pos]
+              if type is 'array'
+                el[key] = if val then [val] else []
+              else if type is 'string' then el[key] = val.toString()
+              else if type is 'number' then el[key] = parseFloat val or 0
+
   intRx = /^\d+$/i
   floatRx = /^\d+\.\d+$/i
   keyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/
+
+  # the task
   grunt.registerMultiTask 'gss', ->
     done = @async()
     opts = @data.options or {}
+
+    # prepare files, [{key:string, gid:string, src:string, dest:string, opts:object}]
     files = []
     if toType(@data.files) is 'object'
       for dest, src of @data.files
@@ -104,7 +139,7 @@ module.exports = (grunt) ->
         else file.opts = opts
         files.push file
 
-    # sync, could be implt as async after token is retrieved
+    # loop and save files, could be implt as async after token is retrieved
     (next = (file) ->
       getSheet(file.key, file.gid, opts.clientId, opts.clientSecret, 'http://localhost:4477/').then (resp) ->
         # save csv
@@ -112,41 +147,13 @@ module.exports = (grunt) ->
         # save json
         else
           arr = JSON.parse csv2json resp.body
-          # auto json field type
-          if file.opts.typeDetection
-            for el in arr
-              for key, val of el
-                if intRx.test val then el[key] = parseInt val
-                else if floatRx.test val then el[key] = parseFloat val
-                else if val.indexOf(',') isnt -1
-                  # comma become second delimiter if pipe exists
-                  if val.indexOf('|') isnt -1
-                    lv1 = val.split '|'
-                    lv2 = []
-                    lv2.push el1.split ',' for el1 in lv1
-                    el[key] = lv2
-                  else el[key] = val.split ','
-          # enforce json field type
-          if file.opts.typeMapping
-            fields = []
-            types = []
-            for field, type of file.opts.typeMapping
-              fields.push field
-              types.push type
-            for el in arr
-              for key, val of el
-                if (pos = fields.indexOf key) isnt -1
-                  if toType(val) isnt type = types[pos]
-                    if type is 'array'
-                      el[key] = if val then [val] else []
-                    else if type is 'string' then el[key] = val.toString()
-                    else if type is 'number' then el[key] = parseFloat val or 0
+          if file.opts.typeDetection then convertFields arr
+          if file.opts.typeMapping then convertFields arr, file.opts.typeMapping
           # prettify
           if file.opts.prettifyJson
             grunt.file.write file.dest, JSON.stringify arr, null, 2
           else grunt.file.write file.dest, JSON.stringify arr
-
-        # loop
+        # continue
         if files.length then next files.shift()
         else done true
     ).call @, files.shift()
