@@ -80,13 +80,18 @@ module.exports = (grunt) ->
     .listen 4477 # ggss
     promise
 
+  boolRx = /^(true|false)$/i
+  floatRx = /^\d+\.\d+$/i
+  intRx = /^\d+$/i
+  trueRx = /^true$/i
   convertFields = (arr, mapping) ->
     # auto
     if not mapping
       for el in arr
         for key, val of el
-          if intRx.test val then el[key] = parseInt val
+          if boolRx.test val then el[key] = trueRx.test val
           else if floatRx.test val then el[key] = parseFloat val
+          else if intRx.test val then el[key] = parseInt val
           else if val.indexOf(',') isnt -1
             # comma become second delimiter if pipe exists
             if val.indexOf('|') isnt -1
@@ -106,18 +111,15 @@ module.exports = (grunt) ->
         for key, val of el
           if (pos = fields.indexOf key) isnt -1
             if toType(val) isnt type = types[pos]
-              if type is 'array'
-                el[key] = if val then [val] else []
-              else if type is 'string' then el[key] = val.toString()
+              if type is 'array' then (el[key] = if val then [val] else [])
+              else if type is 'boolean' then el[key] = trueRx.test val
               else if type is 'number' then el[key] = parseFloat val or 0
+              else if type is 'string' then el[key] = val.toString()
               else if type is 'undefined' then delete el[key]
     null
 
-  intRx = /^\d+$/i
-  floatRx = /^\d+\.\d+$/i
-  keyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/
-
   # the task
+  keyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/
   grunt.registerMultiTask 'gss', ->
     done = @async()
     opts = @data.options or {}

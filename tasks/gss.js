@@ -1,5 +1,5 @@
 module.exports = function(grunt) {
-  var OAuth2Client, Promise, all, convertFields, csv2json, done, extend, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, keyAndGidRx, open, querystring, request, toType, _files, _oauth2clients, _sheets;
+  var OAuth2Client, Promise, all, boolRx, convertFields, csv2json, done, extend, floatRx, getAccessToken, getClient, getFile, getSheet, googleapis, http, intRx, keyAndGidRx, open, querystring, request, toType, trueRx, _files, _oauth2clients, _sheets;
   all = require('node-promise').all;
   csv2json = require('./lib/csv2json');
   done = void 0;
@@ -116,6 +116,10 @@ module.exports = function(grunt) {
     }).listen(4477);
     return promise;
   };
+  boolRx = /^(true|false)$/i;
+  floatRx = /^\d+\.\d+$/i;
+  intRx = /^\d+$/i;
+  trueRx = /^true$/i;
   convertFields = function(arr, mapping) {
     var el, el1, field, fields, key, lv1, lv2, pos, type, types, val, _i, _j, _k, _len, _len1, _len2;
     if (!mapping) {
@@ -123,10 +127,12 @@ module.exports = function(grunt) {
         el = arr[_i];
         for (key in el) {
           val = el[key];
-          if (intRx.test(val)) {
-            el[key] = parseInt(val);
+          if (boolRx.test(val)) {
+            el[key] = trueRx.test(val);
           } else if (floatRx.test(val)) {
             el[key] = parseFloat(val);
+          } else if (intRx.test(val)) {
+            el[key] = parseInt(val);
           } else if (val.indexOf(',') !== -1) {
             if (val.indexOf('|') !== -1) {
               lv1 = val.split('|');
@@ -158,10 +164,12 @@ module.exports = function(grunt) {
             if (toType(val) !== (type = types[pos])) {
               if (type === 'array') {
                 el[key] = val ? [val] : [];
-              } else if (type === 'string') {
-                el[key] = val.toString();
+              } else if (type === 'boolean') {
+                el[key] = trueRx.test(val);
               } else if (type === 'number') {
                 el[key] = parseFloat(val || 0);
+              } else if (type === 'string') {
+                el[key] = val.toString();
               } else if (type === 'undefined') {
                 delete el[key];
               }
@@ -172,8 +180,6 @@ module.exports = function(grunt) {
     }
     return null;
   };
-  intRx = /^\d+$/i;
-  floatRx = /^\d+\.\d+$/i;
   keyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/;
   grunt.registerMultiTask('gss', function() {
     var dest, file, files, k, next, opts, src, _ref, _ref1;
