@@ -147,7 +147,7 @@ module.exports = (grunt) ->
         # file.src string is somehow being converted to an array
         extend file, JSON.parse file.src[0].replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
         if file.options
-          file.opts = extend true, extend({}, opts), file.options
+          file.opts = extend true, {}, opts, file.options
           delete file.options
         else file.opts = opts
         files.push file
