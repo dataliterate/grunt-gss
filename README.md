@@ -1,4 +1,4 @@
-# grunt-gss v0.4.2
+# grunt-gss v0.4.3
 
 > Save your Google Spreadsheets as CSV or JSON.
 
@@ -115,8 +115,9 @@ grunt.initConfig({
 
 ## Release History
 
- * 2014-03-07   v0.4.2   Add type "boolean"
- * 2014-02-25   v0.4.1   Add type "undefined"
+ * 2014-03-26   v0.4.3   Fix manual array mapping
+ * 2014-03-07   v0.4.2   Add type boolean
+ * 2014-02-25   v0.4.1   Add type undefined
  * 2014-02-25   v0.4.0   Add files object array to support options per file
  * 2014-02-04   v0.3.0   Add typeMapping, new option to enforce field type
  * 2014-01-31   v0.2.0   Implement save json, and update options

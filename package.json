@@ -1,7 +1,7 @@
 {
   "name": "grunt-gss",
   "description": "Save your Google Spreadsheets as CSV or JSON.",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "homepage": "https://github.com/h0ward/grunt-gss",
   "author": {
     "name": "h0ward",
