@@ -216,7 +216,7 @@ module.exports = function(grunt) {
         file = _ref1[k];
         extend(file, JSON.parse(file.src[0].replace(keyAndGidRx, '{"key":"$1","gid":"$2"}')));
         if (file.options) {
-          file.opts = extend(true, extend({}, opts), file.options);
+          file.opts = extend(true, {}, opts, file.options);
           delete file.options;
         } else {
           file.opts = opts;
