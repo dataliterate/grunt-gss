@@ -121,7 +121,7 @@ module.exports = function(grunt) {
   intRx = /^\d+$/i;
   trueRx = /^true$/i;
   convertFields = function(arr, mapping) {
-    var el, el1, field, fields, key, lv1, lv2, pos, type, types, val, _i, _j, _k, _len, _len1, _len2;
+    var el, el1, field, fields, key, lv1, lv2, pos, type, types, val, _i, _j, _k, _l, _len, _len1, _len2, _len3;
     if (!mapping) {
       for (_i = 0, _len = arr.length; _i < _len; _i++) {
         el = arr[_i];
@@ -163,7 +163,21 @@ module.exports = function(grunt) {
           if ((pos = fields.indexOf(key)) !== -1) {
             if (toType(val) !== (type = types[pos])) {
               if (type === 'array') {
-                el[key] = val ? [val] : [];
+                if (val.indexOf(',') !== -1) {
+                  if (val.indexOf('|') !== -1) {
+                    lv1 = val.split('|');
+                    lv2 = [];
+                    for (_l = 0, _len3 = lv1.length; _l < _len3; _l++) {
+                      el1 = lv1[_l];
+                      lv2.push(el1.split(','));
+                    }
+                    el[key] = lv2;
+                  } else {
+                    el[key] = val.split(',');
+                  }
+                } else {
+                  el[key] = val ? [val] : [];
+                }
               } else if (type === 'boolean') {
                 el[key] = trueRx.test(val);
               } else if (type === 'number') {
