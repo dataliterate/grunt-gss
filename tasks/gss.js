@@ -21,7 +21,7 @@ module.exports = function(grunt) {
     promise = new Promise();
     if (sheet = _sheets["" + fileId + sheetId]) {
       promise.resolve(sheet);
-      grunt.log.writeln('getSheet: ok');
+      grunt.log.writeln("getSheet: " + sheetId + ", ok");
     } else {
       oauth2client = _oauth2clients["" + clientId + clientSecret] || new OAuth2Client(clientId, clientSecret, redirectUri);
       getFile(fileId, oauth2client).then(function(file) {
@@ -42,7 +42,7 @@ module.exports = function(grunt) {
           if (err) {
             grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
           }
-          grunt.log.writeln('getSheet: ok');
+          grunt.log.writeln("getSheet: " + sheetId + ", ok");
           _oauth2clients["" + oauth2client.clientId_ + oauth2client.clientSecret_] = oauth2client;
           return promise.resolve(_sheets["" + fileId + sheetId] = resp);
         });
@@ -64,29 +64,29 @@ module.exports = function(grunt) {
           if (err) {
             grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
           }
-          grunt.log.writeln('getFile: ok');
+          grunt.log.writeln("getFile: " + fileId + ", ok");
           return promise.resolve(_files[fileId] = file);
         });
       });
     }
     return promise;
   };
-  getClient = function(client, version, oauth2client) {
+  getClient = function(name, version, oauth2client) {
     var get, promise;
     promise = new Promise();
     get = function(err, client) {
       if (err) {
         grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
       }
-      grunt.log.writeln('getClient: ok');
+      grunt.log.writeln("getClient: " + name + " " + version + ", ok");
       return promise.resolve(client);
     };
     if (oauth2client) {
       getAccessToken(oauth2client).then(function() {
-        return googleapis.discover(client, version).withAuthClient(oauth2client).execute(get);
+        return googleapis.discover(name, version).withAuthClient(oauth2client).execute(get);
       });
     } else {
-      googleapis.discover(client, version).execute(get);
+      googleapis.discover(name, version).execute(get);
     }
     return promise;
   };
@@ -110,7 +110,7 @@ module.exports = function(grunt) {
           grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
         }
         oauth2client.setCredentials(tokens);
-        grunt.log.writeln('getAccessToken: ok');
+        grunt.log.writeln("getAccessToken: " + oauth2client.clientId_ + ", ok");
         return promise.resolve();
       });
     }).listen(4477);
@@ -194,7 +194,7 @@ module.exports = function(grunt) {
     }
     return null;
   };
-  keyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/;
+  keyAndGidRx = /^.*[\/\=]([0-9a-zA-Z]{44})[\/#].*gid=(\d+).*$/;
   grunt.registerMultiTask('gss', function() {
     var dest, file, files, k, next, opts, src, _ref, _ref1;
     done = this.async();
@@ -204,6 +204,8 @@ module.exports = function(grunt) {
       _ref = this.data.files;
       for (dest in _ref) {
         src = _ref[dest];
+        grunt.log.debug(src);
+        grunt.log.debug(src.replace(keyAndGidRx, '{"key":"$1","gid":"$2"}'));
         file = JSON.parse(src.replace(keyAndGidRx, '{"key":"$1","gid":"$2"}'));
         file.src = src;
         file.dest = dest;
@@ -214,6 +216,8 @@ module.exports = function(grunt) {
       _ref1 = this.data.files;
       for (k in _ref1) {
         file = _ref1[k];
+        grunt.log.debug(file.src[0]);
+        grunt.log.debug(file.src[0].replace(keyAndGidRx, '{"key":"$1","gid":"$2"}'));
         extend(file, JSON.parse(file.src[0].replace(keyAndGidRx, '{"key":"$1","gid":"$2"}')));
         if (file.options) {
           file.opts = extend(true, {}, opts, file.options);
@@ -227,7 +231,8 @@ module.exports = function(grunt) {
     return (next = function(file) {
       return getSheet(file.key, file.gid, opts.clientId, opts.clientSecret, 'http://localhost:4477/').then(function(resp) {
         var arr;
-        if (!file.opts.saveJson) {
+        grunt.log.debug(JSON.stringify(resp.body));
+        if (!resp.body || !file.opts.saveJson) {
           grunt.file.write(file.dest, resp.body);
         } else {
           arr = JSON.parse(csv2json(resp.body));

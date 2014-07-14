@@ -19,7 +19,7 @@ module.exports = (grunt) ->
     promise = new Promise()
     if sheet = _sheets["#{fileId}#{sheetId}"]
       promise.resolve sheet
-      grunt.log.writeln 'getSheet: ok'
+      grunt.log.writeln "getSheet: #{sheetId}, ok"
     else
       oauth2client = _oauth2clients["#{clientId}#{clientSecret}"] or
         new OAuth2Client clientId, clientSecret, redirectUri
@@ -31,7 +31,7 @@ module.exports = (grunt) ->
           headers: Authorization: "Bearer #{oauth2client.credentials.access_token}"
         request opts, (err, resp) ->
           if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
-          grunt.log.writeln 'getSheet: ok'
+          grunt.log.writeln "getSheet: #{sheetId}, ok"
           _oauth2clients["#{oauth2client.clientId_}#{oauth2client.clientSecret_}"] = oauth2client
           promise.resolve _sheets["#{fileId}#{sheetId}"] = resp
     promise
@@ -43,20 +43,20 @@ module.exports = (grunt) ->
     else getClient('drive', 'v2', oauth2client).then (client) ->
       client.drive.files.get({fileId}).execute (err, file) ->
         if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
-        grunt.log.writeln 'getFile: ok'
+        grunt.log.writeln "getFile: #{fileId}, ok"
         promise.resolve _files[fileId] = file
     promise
 
-  getClient = (client, version, oauth2client) ->
+  getClient = (name, version, oauth2client) ->
     promise = new Promise()
     get = (err, client) ->
       if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
-      grunt.log.writeln 'getClient: ok'
+      grunt.log.writeln "getClient: #{name} #{version}, ok"
       promise.resolve client
     if oauth2client
       getAccessToken(oauth2client).then ->
-        googleapis.discover(client, version).withAuthClient(oauth2client).execute get
-    else googleapis.discover(client, version).execute get
+        googleapis.discover(name, version).withAuthClient(oauth2client).execute get
+    else googleapis.discover(name, version).execute get
     promise
 
   getAccessToken = (oauth2client) ->
@@ -75,7 +75,7 @@ module.exports = (grunt) ->
       oauth2client.getToken code, (err, tokens) ->
         if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
         oauth2client.setCredentials tokens
-        grunt.log.writeln 'getAccessToken: ok'
+        grunt.log.writeln "getAccessToken: #{oauth2client.clientId_}, ok"
         promise.resolve()
     .listen 4477 # ggss
     promise
@@ -128,7 +128,7 @@ module.exports = (grunt) ->
     null
 
   # the task
-  keyAndGidRx = /^.*key=([^#&]+).*gid=([^&]+).*$/
+  keyAndGidRx = /^.*[\/\=]([0-9a-zA-Z]{44})[\/#].*gid=(\d+).*$/
   grunt.registerMultiTask 'gss', ->
     done = @async()
     opts = @data.options or {}
@@ -137,6 +137,8 @@ module.exports = (grunt) ->
     files = []
     if toType(@data.files) is 'object'
       for dest, src of @data.files
+        grunt.log.debug src
+        grunt.log.debug src.replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
         file = JSON.parse src.replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
         file.src = src
         file.dest = dest
@@ -145,6 +147,8 @@ module.exports = (grunt) ->
     else # object array
       for k, file of @data.files
         # file.src string is somehow being converted to an array
+        grunt.log.debug file.src[0]
+        grunt.log.debug file.src[0].replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
         extend file, JSON.parse file.src[0].replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
         if file.options
           file.opts = extend true, {}, opts, file.options
@@ -155,8 +159,9 @@ module.exports = (grunt) ->
     # loop and save files, could be implt as async after token is retrieved
     (next = (file) ->
       getSheet(file.key, file.gid, opts.clientId, opts.clientSecret, 'http://localhost:4477/').then (resp) ->
+        grunt.log.debug JSON.stringify resp.body
         # save csv
-        if not file.opts.saveJson then grunt.file.write file.dest, resp.body
+        if not resp.body or not file.opts.saveJson then grunt.file.write file.dest, resp.body
         # save json
         else
           arr = JSON.parse csv2json resp.body

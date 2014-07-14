@@ -16,7 +16,7 @@ module.exports = function(grunt) {
         }
       }
     },
-    // https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1
+    // https://docs.google.com/spreadsheets/d/18DpYlL7ey3OTbXnTeDl82wD4ISq6iU2Gv5wCQjJsMuQ/edit#gid=1369557937
     gss: {
       products: {
         options: {
@@ -34,13 +34,13 @@ module.exports = function(grunt) {
             col1: 'string',
             // 'undefined' will not be saved
             col2: 'undefined',
-            col4: 'arr'
+            col4: 'array'
           }
         },
         files: {
           // local save path : link to your worksheet
-          'Sheet1.json': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=0',
-          'Sheet2.json': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1'
+          'Sheet1.json': 'https://docs.google.com/spreadsheets/d/18DpYlL7ey3OTbXnTeDl82wD4ISq6iU2Gv5wCQjJsMuQ/edit#gid=1428256717',
+          'Sheet2.json': 'https://docs.google.com/spreadsheets/d/18DpYlL7ey3OTbXnTeDl82wD4ISq6iU2Gv5wCQjJsMuQ/edit#gid=1369557937'
         }
       },
       // save as csv
@@ -50,10 +50,10 @@ module.exports = function(grunt) {
           clientSecret: 'nwQ2UedRysgbNZl6jE3I77Ji'
         },
         files: {
-          'Sheet1.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=0',
-          'Sheet2.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1',
+          'Sheet1.csv': 'https://docs.google.com/spreadsheets/d/18DpYlL7ey3OTbXnTeDl82wD4ISq6iU2Gv5wCQjJsMuQ/edit#gid=1428256717',
+          'Sheet2.csv': 'https://docs.google.com/spreadsheets/d/18DpYlL7ey3OTbXnTeDl82wD4ISq6iU2Gv5wCQjJsMuQ/edit#gid=1369557937',
           // empty file will be saved too
-          'Sheet3.csv': 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=2'
+          'Sheet3.csv': 'https://docs.google.com/spreadsheet/ccc?key=18DpYlL7ey3OTbXnTeDl82wD4ISq6iU2Gv5wCQjJsMuQ#gid=295788079'
         }
       },
       products3: {
@@ -65,13 +65,13 @@ module.exports = function(grunt) {
           typeDetection: true,
           typeMapping: {
             col1: 'string',
-            col4: 'arr'
+            col4: 'array'
           }
         },
         files: [
           {
-            dest: 'Sheet2.json',
-            src: 'https://docs.google.com/spreadsheet/ccc?key=0AmPyOqJNrt_SdGlZOVlrc2UzS3FpV1V6Ri1jX0haSlE#gid=1',
+            dest: 'Sheet3.json',
+            src: 'https://docs.google.com/spreadsheets/d/18DpYlL7ey3OTbXnTeDl82wD4ISq6iU2Gv5wCQjJsMuQ/edit#gid=295788079',
             // EXTENDING options above
             options: {
               prettifyJson: false,
@@ -85,6 +85,6 @@ module.exports = function(grunt) {
     }
   });
 
-  grunt.registerTask('default', ['coffee']);
+  grunt.registerTask('default', ['gss']);
 
 };
