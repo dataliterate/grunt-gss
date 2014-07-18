@@ -21,11 +21,12 @@ module.exports = function(grunt) {
     promise = new Promise();
     if (sheet = _sheets["" + fileId + sheetId]) {
       promise.resolve(sheet);
-      grunt.log.writeln("getSheet: " + sheetId + ", ok");
+      grunt.verbose.write('cached:');
     } else {
       oauth2client = _oauth2clients["" + clientId + clientSecret] || new OAuth2Client(clientId, clientSecret, redirectUri);
       getFile(fileId, oauth2client).then(function(file) {
         var opts, params, root;
+        grunt.verbose.write('getFile...');
         root = 'https://docs.google.com/feeds/download/spreadsheets/Export';
         params = {
           key: file.id,
@@ -42,7 +43,6 @@ module.exports = function(grunt) {
           if (err) {
             grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
           }
-          grunt.log.writeln("getSheet: " + sheetId + ", ok");
           _oauth2clients["" + oauth2client.clientId_ + "" + oauth2client.clientSecret_] = oauth2client;
           return promise.resolve(_sheets["" + fileId + sheetId] = resp);
         });
@@ -56,15 +56,16 @@ module.exports = function(grunt) {
     promise = new Promise();
     if (file = _files[fileId]) {
       promise.resolve(file);
+      grunt.verbose.write('cached:');
     } else {
       getClient('drive', 'v2', oauth2client).then(function(client) {
+        grunt.verbose.write('getClient...');
         return client.drive.files.get({
           fileId: fileId
         }).execute(function(err, file) {
           if (err) {
             grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
           }
-          grunt.log.writeln("getFile: " + fileId + ", ok");
           return promise.resolve(_files[fileId] = file);
         });
       });
@@ -75,10 +76,10 @@ module.exports = function(grunt) {
     var get, promise;
     promise = new Promise();
     get = function(err, client) {
+      grunt.verbose.write('getAccessToken...');
       if (err) {
         grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
       }
-      grunt.log.writeln("getClient: " + name + " " + version + ", ok");
       return promise.resolve(client);
     };
     if (oauth2client) {
@@ -87,6 +88,7 @@ module.exports = function(grunt) {
       });
     } else {
       googleapis.discover(name, version).execute(get);
+      grunt.verbose.write('cached:');
     }
     return promise;
   };
@@ -109,7 +111,6 @@ module.exports = function(grunt) {
           grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
         }
         oauth2client.setCredentials(tokens);
-        grunt.log.writeln("getAccessToken: " + oauth2client.clientId_ + ", ok");
         return promise.resolve();
       });
     }).listen(4477);
@@ -226,14 +227,15 @@ module.exports = function(grunt) {
         });
       }
     }
-    grunt.log.writeln(JSON.stringify(files));
+    grunt.log.debug(JSON.stringify(files));
     grunt.log.ok();
     done = this.async();
     return (next = function(f) {
+      grunt.log.write("Saving " + f.dest + "...");
       return getSheet(f.key, f.gid, f.opts.clientId, f.opts.clientSecret, 'http://localhost:4477/').then(function(r) {
         var arr;
-        grunt.log.write("Saving " + f.dest + "...");
-        grunt.log.write("" + (JSON.stringify(r.body)) + "...");
+        grunt.verbose.write('getSheet...');
+        grunt.log.debug("" + (JSON.stringify(r.body)) + "...");
         if (!r.body) {
           grunt.log.error('empty');
         } else if (!f.opts.saveJson) {

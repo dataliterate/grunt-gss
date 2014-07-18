@@ -20,11 +20,12 @@ module.exports = (grunt) ->
     promise = new Promise()
     if sheet = _sheets["#{fileId}#{sheetId}"]
       promise.resolve sheet
-      grunt.log.writeln "getSheet: #{sheetId}, ok"
+      grunt.verbose.write 'cached:'
     else
       oauth2client = _oauth2clients["#{clientId}#{clientSecret}"] or
         new OAuth2Client clientId, clientSecret, redirectUri
       getFile(fileId, oauth2client).then (file) ->
+        grunt.verbose.write 'getFile...'
         root = 'https://docs.google.com/feeds/download/spreadsheets/Export'
         params = key: file.id, exportFormat: 'csv', gid: sheetId
         opts =
@@ -34,7 +35,6 @@ module.exports = (grunt) ->
         request opts, (err, resp) ->
           if err then grunt.log.error done(false) or
           "googleapis: #{err.message or err}"
-          grunt.log.writeln "getSheet: #{sheetId}, ok"
           _oauth2clients["#{oauth2client.clientId_}\
           #{oauth2client.clientSecret_}"] = oauth2client
           promise.resolve _sheets["#{fileId}#{sheetId}"] = resp
@@ -43,27 +43,31 @@ module.exports = (grunt) ->
   _files = {}
   getFile = (fileId, oauth2client) ->
     promise = new Promise()
-    if file = _files[fileId] then promise.resolve file
+    if file = _files[fileId]
+      promise.resolve file
+      grunt.verbose.write 'cached:'
     else getClient('drive', 'v2', oauth2client).then (client) ->
+      grunt.verbose.write 'getClient...'
       client.drive.files.get({fileId}).execute (err, file) ->
         if err then grunt.log.error done(false) or
         "googleapis: #{err.message or err}"
-        grunt.log.writeln "getFile: #{fileId}, ok"
         promise.resolve _files[fileId] = file
     promise
 
   getClient = (name, version, oauth2client) ->
     promise = new Promise()
     get = (err, client) ->
+      grunt.verbose.write 'getAccessToken...'
       if err then grunt.log.error done(false) or
       "googleapis: #{err.message or err}"
-      grunt.log.writeln "getClient: #{name} #{version}, ok"
       promise.resolve client
     if oauth2client
       getAccessToken(oauth2client).then ->
         googleapis.discover(name, version)
         .withAuthClient(oauth2client).execute get
-    else googleapis.discover(name, version).execute get
+    else
+      googleapis.discover(name, version).execute get
+      grunt.verbose.write 'cached:'
     promise
 
   getAccessToken = (oauth2client) ->
@@ -81,7 +85,6 @@ module.exports = (grunt) ->
         if err then grunt.log.error done(false) or
         "googleapis: #{err.message or err}"
         oauth2client.setCredentials tokens
-        grunt.log.writeln "getAccessToken: #{oauth2client.clientId_}, ok"
         promise.resolve()
     .listen 4477 # ggss
     promise
@@ -153,16 +156,17 @@ module.exports = (grunt) ->
         files.push
           dest: file.dest, gid: (m = file.src.match keyAndGidRx)[2], key: m[1],
           src: file.src, opts: extend file.options, @data.options or {}
-    grunt.log.writeln JSON.stringify files
+    grunt.log.debug JSON.stringify files
     grunt.log.ok()
 
     # loop and save files
     done = @async()
     (next = (f) ->
+      grunt.log.write "Saving #{f.dest}..."
       getSheet(f.key, f.gid, f.opts.clientId,
-        f.opts.clientSecret, 'http://localhost:4477/').then (r) ->
-        grunt.log.write "Saving #{f.dest}..."
-        grunt.verbose.write "#{JSON.stringify r.body}..."
+      f.opts.clientSecret, 'http://localhost:4477/').then (r) ->
+        grunt.verbose.write 'getSheet...'
+        grunt.log.debug "#{JSON.stringify r.body}..."
         if not r.body then grunt.log.error 'empty'
         else if not f.opts.saveJson then grunt.file.write f.dest, r.body
         else
