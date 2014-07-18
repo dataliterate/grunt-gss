@@ -121,7 +121,7 @@ module.exports = function(grunt) {
   intRx = /^\d+$/i;
   trueRx = /^true$/i;
   convertFields = function(arr, mapping) {
-    var el, el1, field, fields, key, lv1, lv2, pos, type, types, val, _i, _j, _k, _l, _len, _len1, _len2, _len3;
+    var el, field, fields, key, pos, type, types, val, _i, _j, _len, _len1;
     if (!mapping) {
       for (_i = 0, _len = arr.length; _i < _len; _i++) {
         el = arr[_i];
@@ -134,17 +134,7 @@ module.exports = function(grunt) {
           } else if (intRx.test(val)) {
             el[key] = parseInt(val);
           } else if (val.indexOf(',') !== -1) {
-            if (val.indexOf('|') !== -1) {
-              lv1 = val.split('|');
-              lv2 = [];
-              for (_j = 0, _len1 = lv1.length; _j < _len1; _j++) {
-                el1 = lv1[_j];
-                lv2.push(el1.split(','));
-              }
-              el[key] = lv2;
-            } else {
-              el[key] = val.split(',');
-            }
+            el[key] = val.split(',');
           }
         }
       }
@@ -156,25 +146,15 @@ module.exports = function(grunt) {
         fields.push(field);
         types.push(type);
       }
-      for (_k = 0, _len2 = arr.length; _k < _len2; _k++) {
-        el = arr[_k];
+      for (_j = 0, _len1 = arr.length; _j < _len1; _j++) {
+        el = arr[_j];
         for (key in el) {
           val = el[key];
           if ((pos = fields.indexOf(key)) !== -1) {
             if (toType(val) !== (type = types[pos])) {
               if (type === 'array') {
                 if (val.indexOf(',') !== -1) {
-                  if (val.indexOf('|') !== -1) {
-                    lv1 = val.split('|');
-                    lv2 = [];
-                    for (_l = 0, _len3 = lv1.length; _l < _len3; _l++) {
-                      el1 = lv1[_l];
-                      lv2.push(el1.split(','));
-                    }
-                    el[key] = lv2;
-                  } else {
-                    el[key] = val.split(',');
-                  }
+                  el[key] = val.split(',');
                 } else {
                   el[key] = val ? [val] : [];
                 }

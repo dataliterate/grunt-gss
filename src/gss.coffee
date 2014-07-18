@@ -101,14 +101,7 @@ module.exports = (grunt) ->
           if boolRx.test val then el[key] = trueRx.test val
           else if floatRx.test val then el[key] = parseFloat val
           else if intRx.test val then el[key] = parseInt val
-          else if val.indexOf(',') isnt -1
-            # comma become second delimiter if pipe exists
-            if val.indexOf('|') isnt -1
-              lv1 = val.split '|'
-              lv2 = []
-              lv2.push el1.split ',' for el1 in lv1
-              el[key] = lv2
-            else el[key] = val.split ','
+          else if val.indexOf(',') isnt -1 then el[key] = val.split ','
     # manual
     else
       fields = []
@@ -118,17 +111,10 @@ module.exports = (grunt) ->
         types.push type
       for el in arr
         for key, val of el
-          if (pos = fields.indexOf key) isnt -1
-            if toType(val) isnt type = types[pos]
+          if (pos = fields.indexOf key) isnt -1 # if force type found
+            if toType(val) isnt type = types[pos] # and override is needed
               if type is 'array'
-                if val.indexOf(',') isnt -1
-                  # comma become second delimiter if pipe exists
-                  if val.indexOf('|') isnt -1
-                    lv1 = val.split '|'
-                    lv2 = []
-                    lv2.push el1.split ',' for el1 in lv1
-                    el[key] = lv2
-                  else el[key] = val.split ','
+                if val.indexOf(',') isnt -1 then el[key] = val.split ','
                 else el[key] = if val then [val] else []
               else if type is 'boolean' then el[key] = trueRx.test val
               else if type is 'number' then el[key] = parseFloat val or 0
