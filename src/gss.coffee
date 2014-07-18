@@ -3,7 +3,7 @@ module.exports = (grunt) ->
   all = require('node-promise').all
   csv2json = require './lib/csv2json'
   done = undefined
-  extend = require './lib/extend'
+  extend = require 'extend'
   googleapis = require 'googleapis'
   http = require 'http'
   open = require 'open'
@@ -139,31 +139,24 @@ module.exports = (grunt) ->
     done = @async()
     opts = @data.options or {}
 
-    # prepare files
-    # [{key:string, gid:string, src:string, dest:string, opts:object}]
+    # parse file items
+    # [{dest:string, gid:string, key:string, src:string, opts:object}]
     files = []
+    grunt.log.write 'Parsing file entries... '
     if toType(@data.files) is 'object'
       for dest, src of @data.files
-        grunt.log.debug src
-        grunt.log.debug src.replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
-        file = JSON.parse src.replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
-        file.src = src
-        file.dest = dest
-        file.opts = opts
-        files.push file
+        files.push
+          dest: dest, gid: (m = src.match keyAndGidRx)[2], key: m[1],
+          src: src, opts: opts
     else # object array
       for k, file of @data.files
-        # file.src string is somehow being converted to an array
-        grunt.log.debug file.src[0]
-        grunt.log.debug file.src[0].replace keyAndGidRx,
-          '{"key":"$1","gid":"$2"}'
-        extend file, JSON.parse file.src[0].replace keyAndGidRx,
-          '{"key":"$1","gid":"$2"}'
-        if file.options
-          file.opts = extend true, {}, opts, file.options
-          delete file.options
-        else file.opts = opts
-        files.push file
+        # TODO support file.expand, concat multiple sheets
+        file.src = file.src[0] if typeof file.src isnt 'string'
+        files.push
+          dest: file.dest, gid: (m = file.src.match keyAndGidRx)[2],
+          key: m[1], src: file.src, opts: extend file.options, opts
+    grunt.log.writeln JSON.stringify files
+    grunt.log.ok()
 
     # loop and save files, could be implt as async after token is retrieved
     (next = (file) ->

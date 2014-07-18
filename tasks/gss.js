@@ -3,7 +3,7 @@ module.exports = function(grunt) {
   all = require('node-promise').all;
   csv2json = require('./lib/csv2json');
   done = void 0;
-  extend = require('./lib/extend');
+  extend = require('extend');
   googleapis = require('googleapis');
   http = require('http');
   open = require('open');
@@ -195,38 +195,41 @@ module.exports = function(grunt) {
   };
   keyAndGidRx = /^.*[\/\=]([0-9a-zA-Z]{44})[\/#].*gid=(\d+).*$/;
   grunt.registerMultiTask('gss', function() {
-    var dest, file, files, k, next, opts, src, _ref, _ref1;
+    var dest, file, files, k, m, next, opts, src, _ref, _ref1;
     done = this.async();
     opts = this.data.options || {};
     files = [];
+    grunt.log.write('Parsing file entries... ');
     if (toType(this.data.files) === 'object') {
       _ref = this.data.files;
       for (dest in _ref) {
         src = _ref[dest];
-        grunt.log.debug(src);
-        grunt.log.debug(src.replace(keyAndGidRx, '{"key":"$1","gid":"$2"}'));
-        file = JSON.parse(src.replace(keyAndGidRx, '{"key":"$1","gid":"$2"}'));
-        file.src = src;
-        file.dest = dest;
-        file.opts = opts;
-        files.push(file);
+        files.push({
+          dest: dest,
+          gid: (m = src.match(keyAndGidRx))[2],
+          key: m[1],
+          src: src,
+          opts: opts
+        });
       }
     } else {
       _ref1 = this.data.files;
       for (k in _ref1) {
         file = _ref1[k];
-        grunt.log.debug(file.src[0]);
-        grunt.log.debug(file.src[0].replace(keyAndGidRx, '{"key":"$1","gid":"$2"}'));
-        extend(file, JSON.parse(file.src[0].replace(keyAndGidRx, '{"key":"$1","gid":"$2"}')));
-        if (file.options) {
-          file.opts = extend(true, {}, opts, file.options);
-          delete file.options;
-        } else {
-          file.opts = opts;
+        if (typeof file.src !== 'string') {
+          file.src = file.src[0];
         }
-        files.push(file);
+        files.push({
+          dest: file.dest,
+          gid: (m = file.src.match(keyAndGidRx))[2],
+          key: m[1],
+          src: file.src,
+          opts: extend(file.options, opts)
+        });
       }
     }
+    grunt.log.writeln(JSON.stringify(files));
+    grunt.log.ok();
     return (next = function(file) {
       return getSheet(file.key, file.gid, opts.clientId, opts.clientSecret, 'http://localhost:4477/').then(function(resp) {
         var arr;
