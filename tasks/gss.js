@@ -195,11 +195,9 @@ module.exports = function(grunt) {
   };
   keyAndGidRx = /^.*[\/\=]([0-9a-zA-Z]{44})[\/#].*gid=(\d+).*$/;
   grunt.registerMultiTask('gss', function() {
-    var dest, file, files, k, m, next, opts, src, _ref, _ref1;
-    done = this.async();
-    opts = this.data.options || {};
+    var dest, file, files, k, m, next, src, _ref, _ref1;
     files = [];
-    grunt.log.write('Parsing file entries... ');
+    grunt.log.write('Parsing file entries...');
     if (toType(this.data.files) === 'object') {
       _ref = this.data.files;
       for (dest in _ref) {
@@ -209,7 +207,7 @@ module.exports = function(grunt) {
           gid: (m = src.match(keyAndGidRx))[2],
           key: m[1],
           src: src,
-          opts: opts
+          opts: this.data.options || {}
         });
       }
     } else {
@@ -224,32 +222,41 @@ module.exports = function(grunt) {
           gid: (m = file.src.match(keyAndGidRx))[2],
           key: m[1],
           src: file.src,
-          opts: extend(file.options, opts)
+          opts: extend(file.options, this.data.options || {})
         });
       }
     }
     grunt.log.writeln(JSON.stringify(files));
     grunt.log.ok();
-    return (next = function(file) {
-      return getSheet(file.key, file.gid, opts.clientId, opts.clientSecret, 'http://localhost:4477/').then(function(resp) {
+    done = this.async();
+    return (next = function(f) {
+      return getSheet(f.key, f.gid, f.opts.clientId, f.opts.clientSecret, 'http://localhost:4477/').then(function(r) {
         var arr;
-        grunt.log.debug(JSON.stringify(resp.body));
-        if (!resp.body || !file.opts.saveJson) {
-          grunt.file.write(file.dest, resp.body);
+        grunt.log.write("Saving " + f.dest + "...");
+        grunt.log.write("" + (JSON.stringify(r.body)) + "...");
+        if (!r.body) {
+          grunt.log.error('empty');
+        } else if (!f.opts.saveJson) {
+          grunt.file.write(f.dest, r.body);
         } else {
-          arr = JSON.parse(csv2json(resp.body));
-          if (file.opts.typeDetection) {
+          grunt.log.write('csv2json...');
+          arr = JSON.parse(csv2json(r.body));
+          if (f.opts.typeDetection) {
+            grunt.log.write('detect...');
             convertFields(arr);
           }
-          if (file.opts.typeMapping) {
-            convertFields(arr, file.opts.typeMapping);
+          if (f.opts.typeMapping) {
+            grunt.log.write('map...');
+            convertFields(arr, f.opts.typeMapping);
           }
-          if (file.opts.prettifyJson) {
-            grunt.file.write(file.dest, JSON.stringify(arr, null, 2));
+          if (f.opts.prettifyJson) {
+            grunt.log.write('prettify...');
+            grunt.file.write(f.dest, JSON.stringify(arr, null, 2));
           } else {
-            grunt.file.write(file.dest, JSON.stringify(arr));
+            grunt.file.write(f.dest, JSON.stringify(arr));
           }
         }
+        grunt.log.ok();
         if (files.length) {
           return next(files.shift());
         } else {

@@ -136,45 +136,49 @@ module.exports = (grunt) ->
   # the task
   keyAndGidRx = /^.*[\/\=]([0-9a-zA-Z]{44})[\/#].*gid=(\d+).*$/
   grunt.registerMultiTask 'gss', ->
-    done = @async()
-    opts = @data.options or {}
 
     # parse file items
     # [{dest:string, gid:string, key:string, src:string, opts:object}]
     files = []
-    grunt.log.write 'Parsing file entries... '
+    grunt.log.write 'Parsing file entries...'
     if toType(@data.files) is 'object'
       for dest, src of @data.files
         files.push
           dest: dest, gid: (m = src.match keyAndGidRx)[2], key: m[1],
-          src: src, opts: opts
+          src: src, opts: @data.options or {}
     else # object array
       for k, file of @data.files
         # TODO support file.expand, concat multiple sheets
         file.src = file.src[0] if typeof file.src isnt 'string'
         files.push
-          dest: file.dest, gid: (m = file.src.match keyAndGidRx)[2],
-          key: m[1], src: file.src, opts: extend file.options, opts
+          dest: file.dest, gid: (m = file.src.match keyAndGidRx)[2], key: m[1],
+          src: file.src, opts: extend file.options, @data.options or {}
     grunt.log.writeln JSON.stringify files
     grunt.log.ok()
 
-    # loop and save files, could be implt as async after token is retrieved
-    (next = (file) ->
-      getSheet(file.key, file.gid, opts.clientId, opts.clientSecret,
-        'http://localhost:4477/').then (resp) ->
-        grunt.log.debug JSON.stringify resp.body
-        # save csv
-        if not resp.body or not file.opts.saveJson
-          grunt.file.write file.dest, resp.body
-        # save json
+    # loop and save files
+    done = @async()
+    (next = (f) ->
+      getSheet(f.key, f.gid, f.opts.clientId,
+        f.opts.clientSecret, 'http://localhost:4477/').then (r) ->
+        grunt.log.write "Saving #{f.dest}..."
+        grunt.verbose.write "#{JSON.stringify r.body}..."
+        if not r.body then grunt.log.error 'empty'
+        else if not f.opts.saveJson then grunt.file.write f.dest, r.body
         else
-          arr = JSON.parse csv2json resp.body
-          if file.opts.typeDetection then convertFields arr
-          if file.opts.typeMapping then convertFields arr, file.opts.typeMapping
-          # prettify
-          if file.opts.prettifyJson
-            grunt.file.write file.dest, JSON.stringify arr, null, 2
-          else grunt.file.write file.dest, JSON.stringify arr
+          grunt.log.write 'csv2json...'
+          arr = JSON.parse csv2json r.body
+          if f.opts.typeDetection
+            grunt.log.write 'detect...'
+            convertFields arr
+          if f.opts.typeMapping
+            grunt.log.write 'map...'
+            convertFields arr, f.opts.typeMapping
+          if f.opts.prettifyJson
+            grunt.log.write 'prettify...'
+            grunt.file.write f.dest, JSON.stringify arr, null, 2
+          else grunt.file.write f.dest, JSON.stringify arr
+        grunt.log.ok()
         # continue
         if files.length then next files.shift()
         else done true
