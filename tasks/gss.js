@@ -3,7 +3,7 @@ module.exports = function(grunt) {
   all = require('node-promise').all;
   csv2json = require('./lib/csv2json');
   done = void 0;
-  extend = require('./lib/extend');
+  extend = require('extend');
   googleapis = require('googleapis');
   http = require('http');
   open = require('open');
@@ -21,11 +21,12 @@ module.exports = function(grunt) {
     promise = new Promise();
     if (sheet = _sheets["" + fileId + sheetId]) {
       promise.resolve(sheet);
-      grunt.log.writeln("getSheet: " + sheetId + ", ok");
+      grunt.verbose.write('cached:');
     } else {
       oauth2client = _oauth2clients["" + clientId + clientSecret] || new OAuth2Client(clientId, clientSecret, redirectUri);
       getFile(fileId, oauth2client).then(function(file) {
         var opts, params, root;
+        grunt.verbose.write('getFile...');
         root = 'https://docs.google.com/feeds/download/spreadsheets/Export';
         params = {
           key: file.id,
@@ -42,8 +43,7 @@ module.exports = function(grunt) {
           if (err) {
             grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
           }
-          grunt.log.writeln("getSheet: " + sheetId + ", ok");
-          _oauth2clients["" + oauth2client.clientId_ + oauth2client.clientSecret_] = oauth2client;
+          _oauth2clients["" + oauth2client.clientId_ + "" + oauth2client.clientSecret_] = oauth2client;
           return promise.resolve(_sheets["" + fileId + sheetId] = resp);
         });
       });
@@ -56,15 +56,16 @@ module.exports = function(grunt) {
     promise = new Promise();
     if (file = _files[fileId]) {
       promise.resolve(file);
+      grunt.verbose.write('cached:');
     } else {
       getClient('drive', 'v2', oauth2client).then(function(client) {
+        grunt.verbose.write('getClient...');
         return client.drive.files.get({
           fileId: fileId
         }).execute(function(err, file) {
           if (err) {
             grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
           }
-          grunt.log.writeln("getFile: " + fileId + ", ok");
           return promise.resolve(_files[fileId] = file);
         });
       });
@@ -75,10 +76,10 @@ module.exports = function(grunt) {
     var get, promise;
     promise = new Promise();
     get = function(err, client) {
+      grunt.verbose.write('getAccessToken...');
       if (err) {
         grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
       }
-      grunt.log.writeln("getClient: " + name + " " + version + ", ok");
       return promise.resolve(client);
     };
     if (oauth2client) {
@@ -87,6 +88,7 @@ module.exports = function(grunt) {
       });
     } else {
       googleapis.discover(name, version).execute(get);
+      grunt.verbose.write('cached:');
     }
     return promise;
   };
@@ -101,7 +103,6 @@ module.exports = function(grunt) {
     server = http.createServer(function(req, resp) {
       var code;
       code = req.url.substr(7);
-      resp.write('<html><script>open(location,"_self").close()</script></html>');
       resp.end();
       req.connection.destroy();
       server.close();
@@ -110,7 +111,6 @@ module.exports = function(grunt) {
           grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
         }
         oauth2client.setCredentials(tokens);
-        grunt.log.writeln("getAccessToken: " + oauth2client.clientId_ + ", ok");
         return promise.resolve();
       });
     }).listen(4477);
@@ -121,7 +121,7 @@ module.exports = function(grunt) {
   intRx = /^\d+$/i;
   trueRx = /^true$/i;
   convertFields = function(arr, mapping) {
-    var el, el1, field, fields, key, lv1, lv2, pos, type, types, val, _i, _j, _k, _l, _len, _len1, _len2, _len3;
+    var el, field, fields, key, pos, type, types, val, _i, _j, _len, _len1;
     if (!mapping) {
       for (_i = 0, _len = arr.length; _i < _len; _i++) {
         el = arr[_i];
@@ -134,17 +134,7 @@ module.exports = function(grunt) {
           } else if (intRx.test(val)) {
             el[key] = parseInt(val);
           } else if (val.indexOf(',') !== -1) {
-            if (val.indexOf('|') !== -1) {
-              lv1 = val.split('|');
-              lv2 = [];
-              for (_j = 0, _len1 = lv1.length; _j < _len1; _j++) {
-                el1 = lv1[_j];
-                lv2.push(el1.split(','));
-              }
-              el[key] = lv2;
-            } else {
-              el[key] = val.split(',');
-            }
+            el[key] = val.split(',');
           }
         }
       }
@@ -156,25 +146,15 @@ module.exports = function(grunt) {
         fields.push(field);
         types.push(type);
       }
-      for (_k = 0, _len2 = arr.length; _k < _len2; _k++) {
-        el = arr[_k];
+      for (_j = 0, _len1 = arr.length; _j < _len1; _j++) {
+        el = arr[_j];
         for (key in el) {
           val = el[key];
           if ((pos = fields.indexOf(key)) !== -1) {
             if (toType(val) !== (type = types[pos])) {
               if (type === 'array') {
                 if (val.indexOf(',') !== -1) {
-                  if (val.indexOf('|') !== -1) {
-                    lv1 = val.split('|');
-                    lv2 = [];
-                    for (_l = 0, _len3 = lv1.length; _l < _len3; _l++) {
-                      el1 = lv1[_l];
-                      lv2.push(el1.split(','));
-                    }
-                    el[key] = lv2;
-                  } else {
-                    el[key] = val.split(',');
-                  }
+                  el[key] = val.split(',');
                 } else {
                   el[key] = val ? [val] : [];
                 }
@@ -186,6 +166,8 @@ module.exports = function(grunt) {
                 el[key] = val.toString();
               } else if (type === 'undefined') {
                 delete el[key];
+              } else if (toType(type) === 'function') {
+                el[key] = type(val);
               }
             }
           }
@@ -196,58 +178,69 @@ module.exports = function(grunt) {
   };
   keyAndGidRx = /^.*[\/\=]([0-9a-zA-Z]{44})[\/#].*gid=(\d+).*$/;
   grunt.registerMultiTask('gss', function() {
-    var dest, file, files, k, next, opts, src, _ref, _ref1;
-    done = this.async();
-    opts = this.data.options || {};
+    var dest, file, files, k, m, next, src, _ref, _ref1;
     files = [];
+    grunt.log.write('Parsing file entries...');
     if (toType(this.data.files) === 'object') {
       _ref = this.data.files;
       for (dest in _ref) {
         src = _ref[dest];
-        grunt.log.debug(src);
-        grunt.log.debug(src.replace(keyAndGidRx, '{"key":"$1","gid":"$2"}'));
-        file = JSON.parse(src.replace(keyAndGidRx, '{"key":"$1","gid":"$2"}'));
-        file.src = src;
-        file.dest = dest;
-        file.opts = opts;
-        files.push(file);
+        files.push({
+          dest: dest,
+          gid: (m = src.match(keyAndGidRx))[2],
+          key: m[1],
+          src: src,
+          opts: this.data.options || {}
+        });
       }
     } else {
       _ref1 = this.data.files;
       for (k in _ref1) {
         file = _ref1[k];
-        grunt.log.debug(file.src[0]);
-        grunt.log.debug(file.src[0].replace(keyAndGidRx, '{"key":"$1","gid":"$2"}'));
-        extend(file, JSON.parse(file.src[0].replace(keyAndGidRx, '{"key":"$1","gid":"$2"}')));
-        if (file.options) {
-          file.opts = extend(true, {}, opts, file.options);
-          delete file.options;
-        } else {
-          file.opts = opts;
+        if (typeof file.src !== 'string') {
+          file.src = file.src[0];
         }
-        files.push(file);
+        files.push({
+          dest: file.dest,
+          gid: (m = file.src.match(keyAndGidRx))[2],
+          key: m[1],
+          src: file.src,
+          opts: extend(file.options, this.data.options || {})
+        });
       }
     }
-    return (next = function(file) {
-      return getSheet(file.key, file.gid, opts.clientId, opts.clientSecret, 'http://localhost:4477/').then(function(resp) {
+    grunt.log.debug(JSON.stringify(files));
+    grunt.log.ok();
+    done = this.async();
+    return (next = function(f) {
+      grunt.log.write("Saving " + f.dest + "...");
+      return getSheet(f.key, f.gid, f.opts.clientId, f.opts.clientSecret, 'http://localhost:4477/').then(function(r) {
         var arr;
-        grunt.log.debug(JSON.stringify(resp.body));
-        if (!resp.body || !file.opts.saveJson) {
-          grunt.file.write(file.dest, resp.body);
+        grunt.verbose.write('getSheet...');
+        grunt.log.debug("" + (JSON.stringify(r.body)) + "...");
+        if (!r.body) {
+          grunt.log.error('empty');
+        } else if (!f.opts.saveJson) {
+          grunt.file.write(f.dest, r.body);
         } else {
-          arr = JSON.parse(csv2json(resp.body));
-          if (file.opts.typeDetection) {
+          grunt.log.write('csv2json...');
+          arr = JSON.parse(csv2json(r.body));
+          if (f.opts.typeDetection) {
+            grunt.log.write('detect...');
             convertFields(arr);
           }
-          if (file.opts.typeMapping) {
-            convertFields(arr, file.opts.typeMapping);
+          if (f.opts.typeMapping) {
+            grunt.log.write('map...');
+            convertFields(arr, f.opts.typeMapping);
           }
-          if (file.opts.prettifyJson) {
-            grunt.file.write(file.dest, JSON.stringify(arr, null, 2));
+          if (f.opts.prettifyJson) {
+            grunt.log.write('prettify...');
+            grunt.file.write(f.dest, JSON.stringify(arr, null, 2));
           } else {
-            grunt.file.write(file.dest, JSON.stringify(arr));
+            grunt.file.write(f.dest, JSON.stringify(arr));
           }
         }
+        grunt.log.ok();
         if (files.length) {
           return next(files.shift());
         } else {
