@@ -28,7 +28,9 @@ module.exports = (grunt) ->
             col1: 'string'
             # 'undefined' will not be saved
             col2: 'undefined'
-            col4: 'array'
+            col4: (val) ->
+              if not val.join then val.split '|'
+              else val.join(',').split('|').map (v) -> v.split ','
         files:
           # local save path : link to your worksheet
           'Sheet1.json': 'https://docs.google.com/spreadsheets/d/18DpYlL7ey3OTbXnTeDl82wD4ISq6iU2Gv5wCQjJsMuQ/edit#gid=1428256717'

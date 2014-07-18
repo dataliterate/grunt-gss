@@ -166,6 +166,8 @@ module.exports = function(grunt) {
                 el[key] = val.toString();
               } else if (type === 'undefined') {
                 delete el[key];
+              } else if (toType(type) === 'function') {
+                el[key] = type(val);
               }
             }
           }

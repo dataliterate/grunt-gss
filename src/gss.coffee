@@ -120,6 +120,7 @@ module.exports = (grunt) ->
               else if type is 'number' then el[key] = parseFloat val or 0
               else if type is 'string' then el[key] = val.toString()
               else if type is 'undefined' then delete el[key]
+              else if toType(type) is 'function' then el[key] = type val
     null
 
   # the task
