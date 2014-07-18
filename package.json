@@ -4,7 +4,7 @@
   "version": "0.4.6",
   "homepage": "https://github.com/h0ward/grunt-gss",
   "author": {
-    "name": "h0ward",
+    "name": "H0WARD <h0ward@outlook.com>",
     "url": "http://github.com/h0ward"
   },
   "repository": {
@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "grunt": "~0.4.0",
-    "grunt-contrib-coffee": "~0.8.0"
+    "grunt-contrib-coffee": "^0.10.1"
   },
   "keywords": [
     "grunt",
