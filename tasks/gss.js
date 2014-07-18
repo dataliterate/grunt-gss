@@ -43,7 +43,7 @@ module.exports = function(grunt) {
             grunt.log.error(done(false) || ("googleapis: " + (err.message || err)));
           }
           grunt.log.writeln("getSheet: " + sheetId + ", ok");
-          _oauth2clients["" + oauth2client.clientId_ + oauth2client.clientSecret_] = oauth2client;
+          _oauth2clients["" + oauth2client.clientId_ + "" + oauth2client.clientSecret_] = oauth2client;
           return promise.resolve(_sheets["" + fileId + sheetId] = resp);
         });
       });
@@ -101,7 +101,6 @@ module.exports = function(grunt) {
     server = http.createServer(function(req, resp) {
       var code;
       code = req.url.substr(7);
-      resp.write('<html><script>open(location,"_self").close()</script></html>');
       resp.end();
       req.connection.destroy();
       server.close();

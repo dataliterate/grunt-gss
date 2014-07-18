@@ -11,7 +11,8 @@ module.exports = (grunt) ->
   request = require 'request'
   OAuth2Client = googleapis.OAuth2Client
   Promise = require('node-promise').Promise
-  toType = (obj) -> ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase()
+  toType = (obj) ->
+    ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase()
 
   _sheets = {}
   _oauth2clients = {}
@@ -28,11 +29,14 @@ module.exports = (grunt) ->
         params = key: file.id, exportFormat: 'csv', gid: sheetId
         opts =
           uri: "#{root}?#{querystring.stringify params}"
-          headers: Authorization: "Bearer #{oauth2client.credentials.access_token}"
+          headers: Authorization:
+            "Bearer #{oauth2client.credentials.access_token}"
         request opts, (err, resp) ->
-          if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
+          if err then grunt.log.error done(false) or
+          "googleapis: #{err.message or err}"
           grunt.log.writeln "getSheet: #{sheetId}, ok"
-          _oauth2clients["#{oauth2client.clientId_}#{oauth2client.clientSecret_}"] = oauth2client
+          _oauth2clients["#{oauth2client.clientId_}\
+          #{oauth2client.clientSecret_}"] = oauth2client
           promise.resolve _sheets["#{fileId}#{sheetId}"] = resp
     promise
 
@@ -42,7 +46,8 @@ module.exports = (grunt) ->
     if file = _files[fileId] then promise.resolve file
     else getClient('drive', 'v2', oauth2client).then (client) ->
       client.drive.files.get({fileId}).execute (err, file) ->
-        if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
+        if err then grunt.log.error done(false) or
+        "googleapis: #{err.message or err}"
         grunt.log.writeln "getFile: #{fileId}, ok"
         promise.resolve _files[fileId] = file
     promise
@@ -50,12 +55,14 @@ module.exports = (grunt) ->
   getClient = (name, version, oauth2client) ->
     promise = new Promise()
     get = (err, client) ->
-      if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
+      if err then grunt.log.error done(false) or
+      "googleapis: #{err.message or err}"
       grunt.log.writeln "getClient: #{name} #{version}, ok"
       promise.resolve client
     if oauth2client
       getAccessToken(oauth2client).then ->
-        googleapis.discover(name, version).withAuthClient(oauth2client).execute get
+        googleapis.discover(name, version)
+        .withAuthClient(oauth2client).execute get
     else googleapis.discover(name, version).execute get
     promise
 
@@ -67,13 +74,12 @@ module.exports = (grunt) ->
     open url
     server = http.createServer (req, resp) ->
       code = req.url.substr 7
-      # works only on chrome
-      resp.write '<html><script>open(location,"_self").close()</script></html>'
       resp.end()
       req.connection.destroy()
       server.close()
       oauth2client.getToken code, (err, tokens) ->
-        if err then grunt.log.error done(false) or "googleapis: #{err.message or err}"
+        if err then grunt.log.error done(false) or
+        "googleapis: #{err.message or err}"
         oauth2client.setCredentials tokens
         grunt.log.writeln "getAccessToken: #{oauth2client.clientId_}, ok"
         promise.resolve()
@@ -133,7 +139,8 @@ module.exports = (grunt) ->
     done = @async()
     opts = @data.options or {}
 
-    # prepare files, [{key:string, gid:string, src:string, dest:string, opts:object}]
+    # prepare files
+    # [{key:string, gid:string, src:string, dest:string, opts:object}]
     files = []
     if toType(@data.files) is 'object'
       for dest, src of @data.files
@@ -148,8 +155,10 @@ module.exports = (grunt) ->
       for k, file of @data.files
         # file.src string is somehow being converted to an array
         grunt.log.debug file.src[0]
-        grunt.log.debug file.src[0].replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
-        extend file, JSON.parse file.src[0].replace keyAndGidRx, '{"key":"$1","gid":"$2"}'
+        grunt.log.debug file.src[0].replace keyAndGidRx,
+          '{"key":"$1","gid":"$2"}'
+        extend file, JSON.parse file.src[0].replace keyAndGidRx,
+          '{"key":"$1","gid":"$2"}'
         if file.options
           file.opts = extend true, {}, opts, file.options
           delete file.options
@@ -158,10 +167,12 @@ module.exports = (grunt) ->
 
     # loop and save files, could be implt as async after token is retrieved
     (next = (file) ->
-      getSheet(file.key, file.gid, opts.clientId, opts.clientSecret, 'http://localhost:4477/').then (resp) ->
+      getSheet(file.key, file.gid, opts.clientId, opts.clientSecret,
+        'http://localhost:4477/').then (resp) ->
         grunt.log.debug JSON.stringify resp.body
         # save csv
-        if not resp.body or not file.opts.saveJson then grunt.file.write file.dest, resp.body
+        if not resp.body or not file.opts.saveJson
+          grunt.file.write file.dest, resp.body
         # save json
         else
           arr = JSON.parse csv2json resp.body
