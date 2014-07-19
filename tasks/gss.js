@@ -121,20 +121,20 @@ module.exports = function(grunt) {
   intRx = /^\d+$/i;
   trueRx = /^true$/i;
   convertFields = function(arr, mapping) {
-    var el, field, fields, key, pos, type, types, val, _i, _j, _len, _len1;
+    var field, fields, i, key, obj, type, types, val, _i, _j, _k, _len, _len1, _len2;
     if (!mapping) {
       for (_i = 0, _len = arr.length; _i < _len; _i++) {
-        el = arr[_i];
-        for (key in el) {
-          val = el[key];
+        obj = arr[_i];
+        for (key in obj) {
+          val = obj[key];
           if (boolRx.test(val)) {
-            el[key] = trueRx.test(val);
+            obj[key] = trueRx.test(val);
           } else if (floatRx.test(val)) {
-            el[key] = parseFloat(val);
+            obj[key] = parseFloat(val);
           } else if (intRx.test(val)) {
-            el[key] = parseInt(val);
+            obj[key] = parseInt(val);
           } else if (val.indexOf(',') !== -1) {
-            el[key] = val.split(',');
+            obj[key] = val.split(',');
           }
         }
       }
@@ -147,27 +147,33 @@ module.exports = function(grunt) {
         types.push(type);
       }
       for (_j = 0, _len1 = arr.length; _j < _len1; _j++) {
-        el = arr[_j];
-        for (key in el) {
-          val = el[key];
-          if ((pos = fields.indexOf(key)) !== -1) {
-            if (toType(val) !== (type = types[pos])) {
+        obj = arr[_j];
+        for (i = _k = 0, _len2 = types.length; _k < _len2; i = ++_k) {
+          type = types[i];
+          field = fields[i];
+          val = obj[field];
+          if (val === void 0) {
+            if (toType(type) === 'function' && (val = type(obj)) !== void 0) {
+              obj[field] = val;
+            }
+          } else if (type) {
+            if (toType(val) !== type) {
               if (type === 'array') {
                 if (val.indexOf(',') !== -1) {
-                  el[key] = val.split(',');
+                  obj[field] = val.split(',');
                 } else {
-                  el[key] = val ? [val] : [];
+                  obj[field] = val ? [val] : [];
                 }
               } else if (type === 'boolean') {
-                el[key] = trueRx.test(val);
+                obj[field] = trueRx.test(val);
               } else if (type === 'number') {
-                el[key] = parseFloat(val || 0);
+                obj[field] = parseFloat(val || 0);
               } else if (type === 'string') {
-                el[key] = val.toString();
+                obj[field] = val.toString();
               } else if (type === 'undefined') {
-                delete el[key];
+                delete obj[field];
               } else if (toType(type) === 'function') {
-                el[key] = type(val);
+                obj[field] = type(val, obj);
               }
             }
           }

@@ -96,12 +96,12 @@ module.exports = (grunt) ->
   convertFields = (arr, mapping) ->
     # auto
     if not mapping
-      for el in arr
-        for key, val of el
-          if boolRx.test val then el[key] = trueRx.test val
-          else if floatRx.test val then el[key] = parseFloat val
-          else if intRx.test val then el[key] = parseInt val
-          else if val.indexOf(',') isnt -1 then el[key] = val.split ','
+      for obj in arr
+        for key, val of obj
+          if boolRx.test val then obj[key] = trueRx.test val
+          else if floatRx.test val then obj[key] = parseFloat val
+          else if intRx.test val then obj[key] = parseInt val
+          else if val.indexOf(',') isnt -1 then obj[key] = val.split ','
     # manual
     else
       fields = []
@@ -109,18 +109,24 @@ module.exports = (grunt) ->
       for field, type of mapping
         fields.push field
         types.push type
-      for el in arr
-        for key, val of el
-          if (pos = fields.indexOf key) isnt -1 # if force type found
-            if toType(val) isnt type = types[pos] # and override is needed
+      for obj in arr
+        for type, i in types
+          field = fields[i]
+          val = obj[field]
+
+          if val is undefined # if col not exist
+            if toType(type) is 'function' and # and col mapping is a func, try
+            (val = type obj) isnt undefined then obj[field] = val
+          else if type # if force type found
+            if toType(val) isnt type # and override is needed
               if type is 'array'
-                if val.indexOf(',') isnt -1 then el[key] = val.split ','
-                else el[key] = if val then [val] else []
-              else if type is 'boolean' then el[key] = trueRx.test val
-              else if type is 'number' then el[key] = parseFloat val or 0
-              else if type is 'string' then el[key] = val.toString()
-              else if type is 'undefined' then delete el[key]
-              else if toType(type) is 'function' then el[key] = type val
+                if val.indexOf(',') isnt -1 then obj[field] = val.split ','
+                else obj[field] = if val then [val] else []
+              else if type is 'boolean' then obj[field] = trueRx.test val
+              else if type is 'number' then obj[field] = parseFloat val or 0
+              else if type is 'string' then obj[field] = val.toString()
+              else if type is 'undefined' then delete obj[field]
+              else if toType(type) is 'function' then obj[field] = type val, obj
     null
 
   # the task
