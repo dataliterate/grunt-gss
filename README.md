@@ -1,4 +1,4 @@
-# grunt-gss v0.5.0
+# grunt-gss v0.5.1
 
 > Save your Google Spreadsheets as CSV or JSON.
 
@@ -25,13 +25,13 @@ A handy tool for [CouchDB](http://couchdb.apache.org/#download)-backed apps like
 
 ### Setup API key
 1. Go to [API Console](https://code.google.com/apis/console) and create a project
-2. Turn on **Drive API** in **APIS**
-3. **Create new client ID** in **Credentials** and setup accordingly:
+* Turn on **Drive API** in **APIS**
+* **Create new client ID** in **Credentials** and setup accordingly:
    Application type: **Web application**
    Authorized Javascript origins: **http://localhost/**
    Authorized redirect URI: **http://localhost:4477/**
-4. Under **Consent screen**, set **Email address** and **Product name**
-5. After the ID is created, you will see your `clientId` and `clientSecret`
+* Under **Consent screen**, set **Email address** and **Product name**
+* After the ID is created, you will see your `clientId` and `clientSecret`
 
 
 ### Share spreadsheet
@@ -43,17 +43,19 @@ A handy tool for [CouchDB](http://couchdb.apache.org/#download)-backed apps like
 
 ### Task Options
  1. `clientId` and `clientSecret` are from your Google API key
- 2. `saveJson` set to true to save as JSON, otherwise CSV is saved
- 3. `prettifyJson` works for JSON format only
- 4. `typeDetection` apply one of these: `parseInt`, `parseFloat`, or `split(',')`
- 5. `typeMapping` an object containing `col:type` mappings. Possible types are:
+ * `saveJson` set to true to save as JSON, otherwise CSV is saved
+ * `prettifyJson` works for JSON format only
+ * `typeDetection` apply one of these: `parseInt`, `parseFloat`, or `split(',')`
+ * `typeMapping` an object containing `col:type` mappings. Possible types are:
   * array - split value by ',', and for those who wanted multi dimension support, use callback
   * number - `parseInt` if the value consists only numbers, and `parseFloat` if any `,`
-  * string - Raw
+  * string - `toString()`
   * undefined - field and value will be removed from result
-  * or a callback function accepting value and returning whatever can be parsed by JSON.parse
+  * or a callback function accepting `(val, rowObj)` and returning whatever can be parsed by JSON.parse
 
-*Note: If both `typeDetection` and `typeMapping` are `true`, `typeDetection` will be executed first, and followed by `typeMapping` overriding the outcome. That is, value passing to`typeMapping` callback may not be `string`.*
+*Note 1: If both `typeDetection` and `typeMapping` are `true`, `typeDetection` will be executed first, and followed by `typeMapping` overriding the outcome. That is, value passing to`typeMapping` callback may not be `string`.*
+
+*Note 2: It a `col` of `typeMapping` is not found in the CSV at all, and `type` is a callback funtion, it will be called with `(rowObj)`, and save to output if return value is not `undefined`.*
 
 
 ### The Task
@@ -74,11 +76,14 @@ grunt.initConfig
         typeMapping:
           col1: 'string'
           col2: 'undefined'
-          # make it 2D
-          col4: (val) ->
+          # make it 2D, `rowObj` is added @v0.5.1
+          col4: (val, rowObj) ->
             # typeDetection is true, value may already be spited into array
             if not val.join then val.split '|'
             else val.join(',').split('|').map (v) -> v.split ','
+          # v0.5.1
+          colNotExist: (rowObj) -> JSON.stringify rowObj
+          colNotExistEvenInOutput: (rowObj) -> undefined
       files:
         # local save path : link to your worksheet
         'Sheet1.json': 'https://docs.google.com/spreadsheets/d/18DpYlL7ey3OTbXnTeDl82wD4ISq6iU2Gv5wCQjJsMuQ/edit#gid=1428256717'
@@ -124,7 +129,8 @@ products3:
 
 ## Release History
 
- * 2014-07-19   v0.5.0   Add type conversion callback. Remove 2d array support.
+ * 2014-07-19   v0.5.1   Create `col` on the go by `type` callback
+ * 2014-07-19   v0.5.0   Add type conversion callback. Remove 2d array support
  * 2014-07-14   v0.4.6   Fetch key & gid from new gss urls, dump more useful log
  * 2014-03-26   v0.4.5   Fix one more bug about deep copy
  * 2014-03-26   v0.4.4   Switch to $.extend for deep copy
