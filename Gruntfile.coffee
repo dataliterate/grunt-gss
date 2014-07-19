@@ -28,11 +28,13 @@ module.exports = (grunt) ->
             col1: 'string'
             # 'undefined' will not be saved
             col2: 'undefined'
-            col4: (val, row) ->
+            # `rowObj` is added @v0.5.1
+            col4: (val, rowObj) ->
               if not val.join then val.split '|'
               else val.join(',').split('|').map (v) -> v.split ','
-            colNotExist: (row) -> JSON.stringify row
-            colNotExistEvenInOutput: (row) -> undefined
+            # @v0.5.1
+            colNotExist: (rowObj) -> JSON.stringify rowObj
+            colNotExistEvenInOutput: (rowObj) -> undefined
         files:
           # local save path : link to your worksheet
           'Sheet1.json': 'https://docs.google.com/spreadsheets/d/18DpYlL7ey3OTbXnTeDl82wD4ISq6iU2Gv5wCQjJsMuQ/edit#gid=1428256717'
