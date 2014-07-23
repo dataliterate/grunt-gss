@@ -130,7 +130,7 @@ module.exports = (grunt) ->
     null
 
   # the task
-  keyAndGidRx = /^.*[\/\=]([0-9a-zA-Z]{44})[\/#].*gid=(\d+).*$/
+  keyAndGidRx = /^.*[\/\=]([0-9a-zA-Z_\-]{44})[\/#].*gid=(\d+).*$/
   grunt.registerMultiTask 'gss', ->
 
     # parse file items

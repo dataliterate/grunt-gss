@@ -182,7 +182,7 @@ module.exports = function(grunt) {
     }
     return null;
   };
-  keyAndGidRx = /^.*[\/\=]([0-9a-zA-Z]{44})[\/#].*gid=(\d+).*$/;
+  keyAndGidRx = /^.*[\/\=]([0-9a-zA-Z_\-]{44})[\/#].*gid=(\d+).*$/;
   grunt.registerMultiTask('gss', function() {
     var dest, file, files, k, m, next, src, _ref, _ref1;
     files = [];
