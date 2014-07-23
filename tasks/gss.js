@@ -221,15 +221,20 @@ module.exports = function(grunt) {
     return (next = function(f) {
       grunt.log.write("Saving " + f.dest + "...");
       return getSheet(f.key, f.gid, f.opts.clientId, f.opts.clientSecret, 'http://localhost:4477/').then(function(r) {
-        var arr;
+        var arr, out;
         grunt.verbose.write('getSheet...');
         grunt.log.debug("" + (JSON.stringify(r.body)) + "...");
         if (!r.body) {
           grunt.log.error('empty');
         } else if (!f.opts.saveJson) {
-          grunt.file.write(f.dest, r.body);
+          if (!f.opts.wrap) {
+            grunt.file.write(f.dest, r.body);
+          } else {
+            grunt.file.write(f.dest, f.opts.wrap(r.body));
+          }
         } else {
           grunt.log.write('csv2json...');
+          out = '';
           arr = JSON.parse(csv2json(r.body));
           if (f.opts.typeDetection) {
             grunt.log.write('detect...');
@@ -241,9 +246,14 @@ module.exports = function(grunt) {
           }
           if (f.opts.prettifyJson) {
             grunt.log.write('prettify...');
-            grunt.file.write(f.dest, JSON.stringify(arr, null, 2));
+            out = JSON.stringify(arr, null, 2);
           } else {
-            grunt.file.write(f.dest, JSON.stringify(arr));
+            out = JSON.stringify(arr);
+          }
+          if (!f.opts.wrap) {
+            grunt.file.write(f.dest, out);
+          } else {
+            grunt.file.write(f.dest, f.opts.wrap(out));
           }
         }
         grunt.log.ok();
